@@ -20,6 +20,15 @@ Current challenges in finding food deals:
 - Users must manually check multiple restaurant Instagram accounts for daily specials
 - No centralized, community-maintained source for Oakland time-based deals
 
+### Market Validation
+
+The need for centralized happy hour information is not unique to Oakland. Similar gaps exist in nearby areas:
+
+- **San Mateo**: Community members asking for happy hour resources on Reddit ([San Mateo Happy Hours discussion](https://www.reddit.com/r/SanMateo/comments/1jpigf9/happy_hour/))
+- **San Jose**: Users seeking happy hour recommendations ([San Jose Happy Hour recommendations](https://www.reddit.com/r/SanJose/comments/1lgj9th/favorite_happy_hour_recommendations/))
+
+This demonstrates broader market demand for structured, community-maintained deal information across the Bay Area.
+
 ---
 
 ## Solution Overview
