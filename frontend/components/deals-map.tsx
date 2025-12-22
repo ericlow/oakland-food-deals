@@ -72,8 +72,10 @@ export function DealsMap() {
             const infoWindow = new window.google.maps.InfoWindow({
               content: `
                 <div style="padding: 8px; max-width: 200px;">
-                  <h3 style="font-weight: 600; margin-bottom: 4px;">${deal.restaurant_name}</h3>
-                  <p style="font-size: 14px; margin: 0;">${deal.deal_description}</p>
+                  <a href="/deals/${deal.id}" style="font-weight: 600; color: #2563eb; text-decoration: none; display: block; margin-bottom: 4px; cursor: pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                    ${deal.restaurant_name}
+                  </a>
+                  <p style="font-size: 14px; margin: 0; color: #666;">${deal.deal_description}</p>
                 </div>
               `,
             })
