@@ -199,6 +199,7 @@ def get_deals_enriched(skip: int = 0, limit: int = 100, db: Session = Depends(ge
 
         enriched_deal = {
             "id": deal.id,
+            "business_id": business.id,
             "restaurant_name": business.name,
             "deal_description": deal.description or "",
             "schedule": {

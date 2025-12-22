@@ -19,6 +19,7 @@ import { loadGoogleMapsAPI } from "@/lib/google-maps-loader"
 
 interface Deal {
   id: number
+  business_id?: number
   restaurant_name: string
   deal_description: string
   original_price: number | null
@@ -203,29 +204,70 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
     }, 300)
   }
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!deal) return
 
-    setDeal({
-      ...deal,
-      restaurant_name: editForm.restaurant_name,
-      schedule: {
-        days: editForm.days,
-        start_time: editForm.start_time,
-        end_time: editForm.end_time,
-      },
-      deal_description: editForm.deal_description,
-      address: editForm.address,
-      neighborhood: editForm.neighborhood,
-      phone: editForm.phone,
-    })
+    try {
+      // Update business info (name, address, phone)
+      const businessResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${deal.business_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editForm.restaurant_name,
+          address: editForm.address,
+          phone: editForm.phone,
+        })
+      })
 
-    setEditDialogOpen(false)
-    toast({
-      title: "Deal updated!",
-      description: "Your changes have been saved.",
-    })
+      if (!businessResponse.ok) {
+        throw new Error('Failed to update business')
+      }
+
+      // Update deal info (days, times, description)
+      const dealResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          days_active: editForm.days.map(d => d.toLowerCase()),
+          time_start: editForm.start_time,
+          time_end: editForm.end_time,
+          description: editForm.deal_description,
+        })
+      })
+
+      if (!dealResponse.ok) {
+        throw new Error('Failed to update deal')
+      }
+
+      // Update local state with new values
+      setDeal({
+        ...deal,
+        restaurant_name: editForm.restaurant_name,
+        schedule: {
+          days: editForm.days,
+          start_time: editForm.start_time,
+          end_time: editForm.end_time,
+        },
+        deal_description: editForm.deal_description,
+        address: editForm.address,
+        neighborhood: editForm.neighborhood,
+        phone: editForm.phone,
+      })
+
+      setEditDialogOpen(false)
+      toast({
+        title: "Deal updated!",
+        description: "Your changes have been saved to the database.",
+      })
+    } catch (error) {
+      console.error('Error updating deal:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const formatHappyHourTime = () => {
