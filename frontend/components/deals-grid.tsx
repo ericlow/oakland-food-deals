@@ -24,10 +24,24 @@ export function DealsGrid() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setTimeout(() => {
-      setDeals(SAMPLE_DEALS)
-      setLoading(false)
-    }, 500)
+    const fetchDeals = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deals-enriched`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch deals')
+        }
+        const data = await response.json()
+        setDeals(data)
+      } catch (error) {
+        console.error('Error fetching deals:', error)
+        // Fallback to sample data if API fails
+        setDeals(SAMPLE_DEALS)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDeals()
   }, [])
 
   if (loading) {

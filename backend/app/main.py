@@ -164,3 +164,48 @@ def vote_comment(comment_id: int, vote: schemas.VoteUpdate, db: Session = Depend
     if db_comment is None:
         raise HTTPException(status_code=404, detail="Comment not found")
     return db_comment
+
+
+# Enriched deals endpoint - joins deals with business info for frontend
+@app.get("/api/deals-enriched")
+def get_deals_enriched(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """
+    Get deals with business information joined.
+    Returns data in format compatible with frontend expectations.
+    """
+    deals = db.query(models.Deal).offset(skip).limit(limit).all()
+
+    enriched_deals = []
+    for deal in deals:
+        business = db.query(models.Business).filter(models.Business.id == deal.business_id).first()
+        if not business:
+            continue
+
+        enriched_deal = {
+            "id": deal.id,
+            "restaurant_name": business.name,
+            "deal_description": deal.description or "",
+            "schedule": {
+                "days": [day.capitalize() for day in (deal.days_active or [])],
+                "start_time": str(deal.time_start) if deal.time_start else "",
+                "end_time": str(deal.time_end) if deal.time_end else ""
+            },
+            "vote_count": deal.vote_score,
+            "address": business.address,
+            "phone": business.phone,
+            "google_place_id": business.google_place_id,
+            "created_by": deal.created_by,
+            "created_at": deal.created_at.isoformat() if deal.created_at else None,
+            # Default placeholder image so cards render properly
+            "image_url": "/placeholder.jpg",
+            # Additional fields that might be useful
+            "deal_type": deal.deal_type,
+            "food_items": deal.food_items,
+            "drink_items": deal.drink_items,
+            "pricing": deal.pricing,
+            "tags": deal.tags,
+            "website": business.website,
+        }
+        enriched_deals.append(enriched_deal)
+
+    return enriched_deals
