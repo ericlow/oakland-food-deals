@@ -71,24 +71,57 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
   const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
   useEffect(() => {
-    setTimeout(() => {
-      const foundDeal = SAMPLE_DEALS.find((d) => d.id === dealId)
-      setDeal(foundDeal || null)
-      setComments(SAMPLE_COMMENTS.filter((c) => c.deal_id === dealId))
-      setLoading(false)
-      if (foundDeal) {
-        setEditForm({
-          restaurant_name: foundDeal.restaurant_name,
-          days: foundDeal.schedule.days,
-          start_time: foundDeal.schedule.start_time,
-          end_time: foundDeal.schedule.end_time,
-          deal_description: foundDeal.deal_description,
-          address: foundDeal.address || "",
-          neighborhood: foundDeal.neighborhood || "",
-          phone: foundDeal.phone || "",
-        })
+    const fetchDeal = async () => {
+      try {
+        // Fetch the deal from the API
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deals-enriched`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch deals')
+        }
+        const deals = await response.json()
+        const foundDeal = deals.find((d: Deal) => d.id === dealId)
+
+        setDeal(foundDeal || null)
+        // Comments endpoint would be: /comments/?deal_id=${dealId}
+        // For now, use empty array since we don't have comments in DB yet
+        setComments([])
+        setLoading(false)
+
+        if (foundDeal) {
+          setEditForm({
+            restaurant_name: foundDeal.restaurant_name,
+            days: foundDeal.schedule.days,
+            start_time: foundDeal.schedule.start_time,
+            end_time: foundDeal.schedule.end_time,
+            deal_description: foundDeal.deal_description,
+            address: foundDeal.address || "",
+            neighborhood: foundDeal.neighborhood || "",
+            phone: foundDeal.phone || "",
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching deal:', error)
+        // Fallback to sample data
+        const foundDeal = SAMPLE_DEALS.find((d) => d.id === dealId)
+        setDeal(foundDeal || null)
+        setComments(SAMPLE_COMMENTS.filter((c) => c.deal_id === dealId))
+        setLoading(false)
+        if (foundDeal) {
+          setEditForm({
+            restaurant_name: foundDeal.restaurant_name,
+            days: foundDeal.schedule.days,
+            start_time: foundDeal.schedule.start_time,
+            end_time: foundDeal.schedule.end_time,
+            deal_description: foundDeal.deal_description,
+            address: foundDeal.address || "",
+            neighborhood: foundDeal.neighborhood || "",
+            phone: foundDeal.phone || "",
+          })
+        }
       }
-    }, 500)
+    }
+
+    fetchDeal()
   }, [dealId])
 
   useEffect(() => {

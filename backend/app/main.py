@@ -6,6 +6,22 @@ from typing import List, Optional
 from app import models, schemas, crud
 from app.database import engine, get_db
 
+# Default images for deals without custom images
+DEFAULT_IMAGES = [
+    "/craft-beer-bar-interior-with-taps.jpg",
+    "/cocktails-on-bar-with-lake-view.jpg",
+    "/fresh-oysters-on-ice-with-lemon.jpg",
+    "/wine-glasses-and-cheese-board-cozy-cafe.jpg",
+    "/street-tacos-with-margarita-mexican-food.jpg",
+    "/sushi-rolls-platter-fresh-fish.jpg",
+    "/giant-pizza-slice-new-york-style.jpg",
+    "/natural-wine-bottles-elegant-restaurant.jpg",
+]
+
+def get_default_image(deal_id: int) -> str:
+    """Return a consistent image for a deal based on its ID"""
+    return DEFAULT_IMAGES[deal_id % len(DEFAULT_IMAGES)]
+
 app = FastAPI(
     title="Oakland Food Deals API",
     description="API for Oakland Food Deals - community-driven platform for time-sensitive food deals",
@@ -196,8 +212,8 @@ def get_deals_enriched(skip: int = 0, limit: int = 100, db: Session = Depends(ge
             "google_place_id": business.google_place_id,
             "created_by": deal.created_by,
             "created_at": deal.created_at.isoformat() if deal.created_at else None,
-            # Default placeholder image so cards render properly
-            "image_url": "/placeholder.jpg",
+            # Assign image based on deal ID for consistency
+            "image_url": get_default_image(deal.id),
             # Additional fields that might be useful
             "deal_type": deal.deal_type,
             "food_items": deal.food_items,
