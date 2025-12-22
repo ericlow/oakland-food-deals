@@ -36,7 +36,7 @@ interface Deal {
   address?: string
   neighborhood?: string
   phone?: string
-  image?: string
+  image_url?: string
 }
 
 interface Comment {
@@ -256,7 +256,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
       {/* Hero Section with Background Image */}
       <div className="relative h-[300px] md:h-[400px] w-full overflow-hidden">
         <Image
-          src={deal.image || "/placeholder.svg?height=400&width=1200"}
+          src={deal.image_url || "/placeholder.svg?height=400&width=1200"}
           alt={deal.restaurant_name}
           fill
           className="object-cover"
