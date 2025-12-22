@@ -56,6 +56,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
   const [newComment, setNewComment] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [hasVoted, setHasVoted] = useState<"up" | "down" | null>(null)
   const [editForm, setEditForm] = useState({
     restaurant_name: "",
     days: [] as string[],
@@ -70,6 +71,15 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
   const mapRef = useRef<HTMLDivElement>(null)
 
   const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+  // Check if user has already voted on this deal
+  useEffect(() => {
+    const voteKey = `voted_deal_${dealId}`
+    const existingVote = localStorage.getItem(voteKey)
+    if (existingVote === "up" || existingVote === "down") {
+      setHasVoted(existingVote)
+    }
+  }, [dealId])
 
   useEffect(() => {
     const fetchDeal = async () => {
@@ -155,29 +165,85 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
     }
   }
 
-  const handleVote = (direction: "up" | "down") => {
+  const handleVote = async (direction: "up" | "down") => {
     if (!deal) return
-    const newVoteCount = direction === "up" ? deal.vote_count + 1 : deal.vote_count - 1
-    setDeal({ ...deal, vote_count: newVoteCount })
-    toast({
-      title: direction === "up" ? "Upvoted!" : "Downvoted!",
-      description: "Your vote has been recorded.",
-    })
+
+    // Check if already voted
+    if (hasVoted) {
+      toast({
+        title: "Already voted",
+        description: `You've already ${hasVoted === "up" ? "upvoted" : "downvoted"} this deal.`,
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vote: direction === "up" ? 1 : -1 })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to record vote')
+      }
+
+      const updatedDeal = await response.json()
+      setDeal({ ...deal, vote_count: updatedDeal.vote_score })
+
+      // Store vote in localStorage
+      const voteKey = `voted_deal_${deal.id}`
+      localStorage.setItem(voteKey, direction)
+      setHasVoted(direction)
+
+      toast({
+        title: direction === "up" ? "Upvoted!" : "Downvoted!",
+        description: "Your vote has been recorded.",
+      })
+    } catch (error) {
+      console.error('Error voting:', error)
+      toast({
+        title: "Error",
+        description: "Failed to record vote. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleCommentVote = (commentId: number, direction: "up" | "down") => {
-    setComments((prev) =>
-      prev
-        .map((comment) =>
-          comment.id === commentId
-            ? { ...comment, vote_count: direction === "up" ? comment.vote_count + 1 : comment.vote_count - 1 }
-            : comment,
-        )
-        .sort((a, b) => b.vote_count - a.vote_count),
-    )
-    toast({
-      description: direction === "up" ? "Comment upvoted!" : "Comment downvoted!",
-    })
+  const handleCommentVote = async (commentId: number, direction: "up" | "down") => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments/${commentId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vote: direction === "up" ? 1 : -1 })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to record vote')
+      }
+
+      const updatedComment = await response.json()
+      setComments((prev) =>
+        prev
+          .map((comment) =>
+            comment.id === commentId
+              ? { ...comment, vote_count: updatedComment.vote_score }
+              : comment,
+          )
+          .sort((a, b) => b.vote_count - a.vote_count),
+      )
+      toast({
+        description: direction === "up" ? "Comment upvoted!" : "Comment downvoted!",
+      })
+    } catch (error) {
+      console.error('Error voting on comment:', error)
+      toast({
+        title: "Error",
+        description: "Failed to record vote. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleSubmitComment = (e: React.FormEvent) => {
@@ -500,20 +566,22 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleVote("up")}
-                      className="gap-2 bg-white/90 hover:bg-white text-foreground"
+                      disabled={hasVoted !== null}
+                      className={`gap-2 bg-white/90 hover:bg-white text-foreground ${hasVoted === "up" ? "border-green-500 border-2" : ""}`}
                     >
                       <ArrowUp className="h-4 w-4" />
-                      Upvote
+                      {hasVoted === "up" ? "Upvoted" : "Upvote"}
                     </Button>
                     <span className="text-xl md:text-2xl font-bold drop-shadow-lg">{deal.vote_count}</span>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleVote("down")}
-                      className="gap-2 bg-white/90 hover:bg-white text-foreground"
+                      disabled={hasVoted !== null}
+                      className={`gap-2 bg-white/90 hover:bg-white text-foreground ${hasVoted === "down" ? "border-red-500 border-2" : ""}`}
                     >
                       <ArrowDown className="h-4 w-4" />
-                      Downvote
+                      {hasVoted === "down" ? "Downvoted" : "Downvote"}
                     </Button>
                   </div>
                 </div>
