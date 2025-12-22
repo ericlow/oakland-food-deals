@@ -214,6 +214,9 @@ def get_deals_enriched(skip: int = 0, limit: int = 100, db: Session = Depends(ge
             "created_at": deal.created_at.isoformat() if deal.created_at else None,
             # Assign image based on deal ID for consistency
             "image_url": get_default_image(deal.id),
+            # Location for map (default to Oakland downtown for now)
+            "location": {"lat": 37.8044, "lng": -122.2712},
+            "neighborhood": None,  # TODO: Add to database later
             # Additional fields that might be useful
             "deal_type": deal.deal_type,
             "food_items": deal.food_items,

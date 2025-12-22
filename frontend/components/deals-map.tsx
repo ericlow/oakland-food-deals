@@ -12,14 +12,43 @@ declare global {
   }
 }
 
+interface Deal {
+  id: number
+  restaurant_name: string
+  deal_description: string
+  location?: { lat: number; lng: number }
+}
+
 export function DealsMap() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [deals, setDeals] = useState<Deal[]>([])
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
 
   useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deals-enriched`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch deals')
+        }
+        const data = await response.json()
+        setDeals(data)
+      } catch (error) {
+        console.error('Error fetching deals:', error)
+        // Fallback to sample data
+        setDeals(SAMPLE_DEALS)
+      }
+    }
+
+    fetchDeals()
+  }, [])
+
+  useEffect(() => {
     const initializeMap = async () => {
+      if (deals.length === 0) return
+
       try {
         await loadGoogleMapsAPI()
 
@@ -31,7 +60,9 @@ export function DealsMap() {
           })
           mapInstanceRef.current = map
 
-          SAMPLE_DEALS.forEach((deal) => {
+          deals.forEach((deal) => {
+            if (!deal.location) return
+
             const marker = new window.google.maps.marker.AdvancedMarkerElement({
               map,
               position: deal.location,
@@ -62,7 +93,7 @@ export function DealsMap() {
     }
 
     initializeMap()
-  }, [])
+  }, [deals])
 
   return (
     <div className="relative h-[400px] w-full overflow-hidden rounded-lg border border-border bg-card">
