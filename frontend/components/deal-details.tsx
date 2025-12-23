@@ -70,6 +70,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
   })
   const { toast } = useToast()
   const mapRef = useRef<HTMLDivElement>(null)
+  const mapInstanceRef = useRef<any>(null)
 
   const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -175,12 +176,13 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
 
       await loadGoogleMapsAPI()
 
-      if (mapRef.current && deal.location) {
+      if (mapRef.current && deal.location && !mapInstanceRef.current) {
         const map = new window.google.maps.Map(mapRef.current, {
           center: deal.location,
           zoom: 16,
           mapId: "deal_details_map",
         })
+        mapInstanceRef.current = map
 
         new window.google.maps.marker.AdvancedMarkerElement({
           map,
