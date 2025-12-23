@@ -144,16 +144,19 @@ We evaluated three main architectural approaches before selecting the final stac
 | **2. Next.js Only** | Next.js with API routes, PostgreSQL | Single codebase, v0 native, fastest to launch, TypeScript end-to-end | Node.js/TypeScript only, harder for mobile app later, complex AWS deployment |
 | **3. Next.js + FastAPI** | Next.js frontend, FastAPI backend, PostgreSQL | Python backend, Next.js SSR benefits | Most complex, two frameworks, overkill for MVP, unnecessary SSR overhead |
 
-### Final Decision: React + FastAPI
+### Final Decision: React (Next.js) + FastAPI
 
 **Rationale:**
 
 1. **Python Preference:** Developer has strong Python expertise and preference
-2. **Simplicity:** Simpler mental model than Next.js + FastAPI, clearer than Next.js-only for this use case
-3. **No SSR Needed:** The application doesn't require server-side rendering. It's a dynamic, interactive app focused on user submissions and voting, not content-heavy pages requiring SEO optimization
+2. **Simplicity:** Simpler mental model than Next.js + FastAPI for API routes, clearer separation of concerns
+3. **No SSR Needed:** The application doesn't require server-side rendering. It's a dynamic, interactive app focused on user submissions and voting, not content-heavy pages requiring SEO optimization. **We use Next.js static export, not SSR**
 4. **v0 Compatibility:** v0 can generate React components that work perfectly with this architecture
 5. **Future-Proof:** Clean REST API makes it easy to add mobile app later using the same backend
 6. **AWS Free Tier:** Deployment architecture fits well within AWS free tier constraints
+7. **Next.js Benefits:** We use Next.js as a React framework for better developer experience (routing, built-in optimizations) but export to static files
+
+**Implementation Note:** Originally planned as vanilla React, but implemented with Next.js for improved developer experience. We use static export mode, so it deploys identically to a React SPA (static HTML/CSS/JS files on S3).
 
 ---
 
@@ -161,13 +164,18 @@ We evaluated three main architectural approaches before selecting the final stac
 
 | Component | Technology |
 |-----------|------------|
-| **Frontend** | React (generated with v0) |
+| **Frontend** | Next.js 16 (UI components designed with v0) |
 | **Backend** | FastAPI (Python) |
-| **Database** | PostgreSQL with PostGIS extension |
+| **Database** | PostgreSQL |
 | **ORM** | SQLAlchemy |
-| **Hosting - Frontend** | AWS S3 + CloudFront (or EC2 with nginx) |
-| **Hosting - Backend** | AWS EC2 t2.micro (750 hours free tier) |
+| **Containerization** | Docker + Docker Compose |
+| **Infrastructure as Code** | Terraform |
+| **CI/CD** | GitHub Actions |
+| **Hosting - Frontend** | AWS S3 + CloudFront (Next.js static export) |
+| **Hosting - Backend** | AWS EC2 t2.micro (Docker container) or ECS Fargate |
 | **Hosting - Database** | AWS RDS PostgreSQL db.t3.micro (750 hours free tier) |
+
+**Note:** See [AWS_DEPLOYMENT_PLAN.md](./AWS_DEPLOYMENT_PLAN.md) for detailed deployment strategy and dual-environment approach.
 
 ### Why PostgreSQL over DynamoDB
 
@@ -182,48 +190,49 @@ We evaluated three main architectural approaches before selecting the final stac
 
 ## Deployment Architecture
 
-### AWS Free Tier Configuration
+### Dual Deployment Strategy
 
-**Frontend (React):**
-- Build React app to static files
-- Host on S3 as static website (5GB free storage)
-- CloudFront CDN for fast delivery (1TB transfer/month free)
+This project uses a **two-phase deployment approach** to maximize both cost efficiency and learning value:
 
-**Backend (FastAPI):**
-- EC2 t2.micro instance running FastAPI with Uvicorn
-- Nginx reverse proxy for production deployment
+**Phase 1 - Production (Always Running, $0/month):**
+- Next.js static export on S3 + CloudFront
+- FastAPI in Docker container on EC2 t2.micro
+- RDS PostgreSQL db.t3.micro
+- Infrastructure as Code with Terraform
+- CI/CD with GitHub Actions
 
-**Database (PostgreSQL):**
-- RDS PostgreSQL db.t3.micro instance
-- 20GB storage (free tier)
+**Phase 2 - Learning Environment (Spin up for 2-3 days, ~$2 total):**
+- Same frontend (S3 + CloudFront)
+- FastAPI on ECS Fargate with Application Load Balancer
+- Container orchestration for enterprise-level experience
+- Tear down after learning and documentation
 
-### Architecture Diagram
+### Phase 1 Architecture (Production)
 
 ```
 ┌─────────────────┐
-│   CloudFront    │
-│      (CDN)      │
+│   CloudFront    │ (CDN)
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│    S3 Bucket    │
-│  (React Build)  │
+│    S3 Bucket    │ (Next.js Static Export)
 └─────────────────┘
          │
          │ API Calls
          ▼
 ┌─────────────────┐
-│  EC2 t2.micro   │
-│    (FastAPI)    │
+│  EC2 t2.micro   │ (Docker + Nginx)
+│  FastAPI Docker │
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│  RDS Postgres   │
-│  (db.t3.micro)  │
+│  RDS Postgres   │ (db.t3.micro)
 └─────────────────┘
 ```
+
+**For complete deployment details, architecture diagrams, cost breakdown, and implementation timeline, see [AWS_DEPLOYMENT_PLAN.md](./AWS_DEPLOYMENT_PLAN.md)**
 
 ---
 
