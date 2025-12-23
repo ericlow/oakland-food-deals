@@ -10,6 +10,8 @@ class BusinessBase(BaseModel):
     phone: Optional[str] = None
     google_place_id: Optional[str] = None
     website: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class BusinessCreate(BusinessBase):
@@ -22,6 +24,8 @@ class BusinessUpdate(BaseModel):
     phone: Optional[str] = None
     google_place_id: Optional[str] = None
     website: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class Business(BusinessBase):

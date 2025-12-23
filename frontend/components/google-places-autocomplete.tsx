@@ -9,6 +9,12 @@ interface PlaceResult {
   place_id: string
   name: string
   formatted_address?: string
+  phone_number?: string
+  website?: string
+  location?: {
+    lat: number
+    lng: number
+  }
 }
 
 interface GooglePlacesAutocompleteProps {
@@ -54,6 +60,12 @@ export function GooglePlacesAutocomplete({ onPlaceSelect }: GooglePlacesAutocomp
             place_id: place.place_id,
             name: place.name,
             formatted_address: place.formatted_address,
+            phone_number: place.formatted_phone_number,
+            website: place.website,
+            location: place.geometry?.location ? {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng()
+            } : undefined,
           })
         }
       })

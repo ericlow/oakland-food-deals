@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, ARRAY, Time, CheckConstraint
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, ARRAY, Time, CheckConstraint, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -13,6 +13,8 @@ class Business(Base):
     phone = Column(String(20))
     google_place_id = Column(String(255), unique=True, index=True)
     website = Column(String(500))
+    latitude = Column(Float)
+    longitude = Column(Float)
     created_by = Column(String(100))  # Will be user ID later when auth is added
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     vote_score = Column(Integer, default=0)

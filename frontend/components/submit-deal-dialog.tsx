@@ -29,6 +29,8 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
     address: "",
     neighborhood: "",
     phone: "",
+    website: "",
+    location: null as { lat: number; lng: number } | null,
   })
   const [submitting, setSubmitting] = useState(false)
   const { toast } = useToast()
@@ -47,27 +49,47 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
     setSubmitting(true)
 
     try {
-      const payload = {
-        restaurant_name: formData.restaurant_name,
-        deal_description: formData.deal_description,
-        google_place_id: formData.google_place_id || null,
-        recurring_schedule: {
-          days: formData.days,
-          start_time: formData.start_time,
-          end_time: formData.end_time,
-        },
+      // Step 1: Create the business
+      const businessPayload = {
+        name: formData.restaurant_name,
         address: formData.address || null,
-        neighborhood: formData.neighborhood || null,
         phone: formData.phone || null,
+        google_place_id: formData.google_place_id || null,
+        website: formData.website || null,
+        latitude: formData.location?.lat || null,
+        longitude: formData.location?.lng || null,
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals`, {
+      const businessResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(businessPayload),
       })
 
-      if (!response.ok) throw new Error("Failed to submit deal")
+      if (!businessResponse.ok) {
+        const errorData = await businessResponse.json()
+        throw new Error(errorData.detail || "Failed to create business")
+      }
+
+      const business = await businessResponse.json()
+
+      // Step 2: Create the deal for this business
+      const dealPayload = {
+        business_id: business.id,
+        deal_type: "happy_hour", // Default for now
+        days_active: formData.days,
+        time_start: formData.start_time,
+        time_end: formData.end_time,
+        description: formData.deal_description,
+      }
+
+      const dealResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dealPayload),
+      })
+
+      if (!dealResponse.ok) throw new Error("Failed to create deal")
 
       toast({
         title: "Success!",
@@ -84,15 +106,18 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
         address: "",
         neighborhood: "",
         phone: "",
+        website: "",
+        location: null,
       })
       onOpenChange(false)
 
       // Reload page to show new deal
       window.location.reload()
     } catch (error) {
+      console.error("Error submitting deal:", error)
       toast({
         title: "Error",
-        description: "Failed to submit deal. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to submit deal. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -108,33 +133,35 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Restaurant Name */}
+          {/* Google Place Search */}
           <div className="space-y-2">
-            <Label htmlFor="restaurant_name">
-              Restaurant Name <span className="text-destructive">*</span>
+            <Label htmlFor="google_place">
+              Search Restaurant <span className="text-destructive">*</span>
             </Label>
-            <Input
-              id="restaurant_name"
-              value={formData.restaurant_name}
-              onChange={(e) => setFormData({ ...formData, restaurant_name: e.target.value })}
-              required
-              placeholder="e.g., Pizza Palace"
-            />
-          </div>
-
-          {/* Google Place */}
-          <div className="space-y-2">
-            <Label htmlFor="google_place">Google Place (optional)</Label>
             <GooglePlacesAutocomplete
               onPlaceSelect={(place) => {
                 setFormData({
                   ...formData,
                   google_place_id: place.place_id,
                   restaurant_name: place.name,
+                  address: place.formatted_address || formData.address,
+                  phone: place.phone_number || formData.phone,
+                  website: place.website || formData.website,
+                  location: place.location || formData.location,
                 })
               }}
             />
+            <p className="text-xs text-muted-foreground">
+              Search for the restaurant - this will auto-fill name, address, phone, and location
+            </p>
           </div>
+
+          {/* Display selected restaurant name */}
+          {formData.restaurant_name && (
+            <div className="p-3 bg-muted rounded-md">
+              <p className="text-sm font-medium">{formData.restaurant_name}</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="address">Address</Label>
@@ -229,7 +256,11 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={submitting || formData.days.length === 0}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={submitting || formData.days.length === 0 || !formData.restaurant_name}
+          >
             {submitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
