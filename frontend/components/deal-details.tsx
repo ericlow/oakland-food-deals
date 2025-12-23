@@ -165,23 +165,46 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
   }, [dealId])
 
   useEffect(() => {
+    console.log('🗺️ Map useEffect triggered', {
+      hasLocation: !!deal?.location,
+      location: deal?.location,
+      hasMapRef: !!mapRef.current,
+      dealId: deal?.id
+    })
+
     if (deal?.location && mapRef.current) {
+      console.log('✅ Conditions met, calling loadGoogleMap()')
       loadGoogleMap()
+    } else {
+      console.log('❌ Conditions not met for map loading')
     }
   }, [deal])
 
   const loadGoogleMap = async () => {
+    console.log('🔄 loadGoogleMap() called')
     try {
-      if (!deal?.location) return
+      if (!deal?.location) {
+        console.log('❌ No deal location, exiting')
+        return
+      }
 
+      console.log('⏳ Loading Google Maps API...')
       await loadGoogleMapsAPI()
+      console.log('✅ Google Maps API loaded')
 
       if (mapRef.current && deal.location && !mapInstanceRef.current) {
+        console.log('🎯 Creating map with:', {
+          center: deal.location,
+          zoom: 16,
+          restaurantName: deal.restaurant_name
+        })
+
         const map = new window.google.maps.Map(mapRef.current, {
           center: deal.location,
           zoom: 16,
         })
         mapInstanceRef.current = map
+        console.log('✅ Map created successfully')
 
         // Use standard marker instead of AdvancedMarkerElement
         new window.google.maps.Marker({
@@ -189,9 +212,16 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
           position: deal.location,
           title: deal.restaurant_name,
         })
+        console.log('✅ Marker added successfully')
+      } else {
+        console.log('⚠️ Skipping map creation:', {
+          hasMapRef: !!mapRef.current,
+          hasLocation: !!deal.location,
+          mapAlreadyCreated: !!mapInstanceRef.current
+        })
       }
     } catch (error) {
-      console.error("Error loading Google Maps:", error)
+      console.error("❌ Error loading Google Maps:", error)
     }
   }
 
