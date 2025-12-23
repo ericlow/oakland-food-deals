@@ -53,8 +53,29 @@ export function DealsMap() {
         await loadGoogleMapsAPI()
 
         if (mapRef.current && !mapInstanceRef.current) {
+          // Default to Oakland downtown
+          let center = { lat: 37.8044, lng: -122.2712 }
+
+          // Try to get user's current location
+          if (navigator.geolocation) {
+            try {
+              const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                  timeout: 5000,
+                  enableHighAccuracy: false
+                })
+              })
+              center = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              }
+            } catch (error) {
+              console.log("Geolocation denied or unavailable, using default location")
+            }
+          }
+
           const map = new window.google.maps.Map(mapRef.current, {
-            center: { lat: 37.8044, lng: -122.2712 },
+            center,
             zoom: 13,
             mapId: "oakland_food_deals_map",
           })
