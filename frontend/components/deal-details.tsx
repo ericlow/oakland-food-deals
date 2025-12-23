@@ -742,20 +742,18 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleVote("up")}
-                      className={`gap-2 bg-white/90 hover:bg-white text-foreground ${hasVoted === "up" ? "border-green-500 border-2" : ""}`}
+                      className={`bg-white/90 hover:bg-white text-foreground ${hasVoted === "up" ? "border-green-500 border-2" : ""}`}
                     >
                       <ArrowUp className="h-4 w-4" />
-                      {hasVoted === "up" ? "Upvoted" : "Upvote"}
                     </Button>
                     <span className="text-xl md:text-2xl font-bold drop-shadow-lg">{deal.vote_count}</span>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleVote("down")}
-                      className={`gap-2 bg-white/90 hover:bg-white text-foreground ${hasVoted === "down" ? "border-red-500 border-2" : ""}`}
+                      className={`bg-white/90 hover:bg-white text-foreground ${hasVoted === "down" ? "border-red-500 border-2" : ""}`}
                     >
                       <ArrowDown className="h-4 w-4" />
-                      {hasVoted === "down" ? "Downvoted" : "Downvote"}
                     </Button>
                   </div>
                 </div>
