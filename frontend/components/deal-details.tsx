@@ -10,12 +10,24 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { ArrowUp, ArrowDown, Loader2, Send, Clock, ArrowLeft, Pencil, MapPin, Phone, Navigation } from "lucide-react"
 import { SAMPLE_DEALS, SAMPLE_COMMENTS } from "@/lib/sample-data"
 import Link from "next/link"
 import Image from "next/image"
 import { loadGoogleMapsAPI } from "@/lib/google-maps-loader"
+
+const AVAILABLE_IMAGES = [
+  { value: "/craft-beer-bar-interior-with-taps.jpg", label: "Craft Beer Bar" },
+  { value: "/cocktails-on-bar-with-lake-view.jpg", label: "Cocktails & Lake View" },
+  { value: "/fresh-oysters-on-ice-with-lemon.jpg", label: "Fresh Oysters" },
+  { value: "/wine-glasses-and-cheese-board-cozy-cafe.jpg", label: "Wine & Cheese" },
+  { value: "/street-tacos-with-margarita-mexican-food.jpg", label: "Street Tacos & Margaritas" },
+  { value: "/sushi-rolls-platter-fresh-fish.jpg", label: "Sushi Rolls" },
+  { value: "/giant-pizza-slice-new-york-style.jpg", label: "Pizza Slice" },
+  { value: "/natural-wine-bottles-elegant-restaurant.jpg", label: "Natural Wine" },
+]
 
 interface Deal {
   id: number
@@ -67,6 +79,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
     address: "",
     neighborhood: "",
     phone: "",
+    image_url: AVAILABLE_IMAGES[0].value,
   })
   const { toast } = useToast()
   const mapRef = useRef<HTMLDivElement>(null)
@@ -152,6 +165,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
             address: foundDeal.address || "",
             neighborhood: foundDeal.neighborhood || "",
             phone: foundDeal.phone || "",
+            image_url: foundDeal.image_url || AVAILABLE_IMAGES[0].value,
           })
         }
       } catch (error) {
@@ -171,6 +185,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
             address: foundDeal.address || "",
             neighborhood: foundDeal.neighborhood || "",
             phone: foundDeal.phone || "",
+            image_url: foundDeal.image_url || AVAILABLE_IMAGES[0].value,
           })
         }
       }
@@ -523,7 +538,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
         throw new Error('Failed to update business')
       }
 
-      // Update deal info (days, times, description)
+      // Update deal info (days, times, description, image)
       const dealResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -532,6 +547,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
           time_start: editForm.start_time,
           time_end: editForm.end_time,
           description: editForm.deal_description,
+          image_url: editForm.image_url,
         })
       })
 
@@ -552,6 +568,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
         address: editForm.address,
         neighborhood: editForm.neighborhood,
         phone: editForm.phone,
+        image_url: editForm.image_url,
       })
 
       setEditDialogOpen(false)
@@ -780,6 +797,24 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
                             className="min-h-[120px]"
                             required
                           />
+                        </div>
+                        <div>
+                          <Label htmlFor="image_url">Background Image</Label>
+                          <Select
+                            value={editForm.image_url}
+                            onValueChange={(value) => setEditForm({ ...editForm, image_url: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select an image" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {AVAILABLE_IMAGES.map((image) => (
+                                <SelectItem key={image.value} value={image.value}>
+                                  {image.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="flex justify-end gap-2">
                           <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>

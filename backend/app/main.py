@@ -213,8 +213,8 @@ def get_deals_enriched(skip: int = 0, limit: int = 100, db: Session = Depends(ge
             "google_place_id": business.google_place_id,
             "created_by": deal.created_by,
             "created_at": deal.created_at.isoformat() if deal.created_at else None,
-            # Assign image based on deal ID for consistency
-            "image_url": get_default_image(deal.id),
+            # Use deal's image_url if set, otherwise assign default based on deal ID
+            "image_url": deal.image_url or get_default_image(deal.id),
             # Location for map - use actual coordinates from business, fallback to Oakland downtown
             "location": {"lat": business.latitude or 37.8044, "lng": business.longitude or -122.2712},
             "neighborhood": None,  # TODO: Add to database later

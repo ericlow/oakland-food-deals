@@ -9,9 +9,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { GooglePlacesAutocomplete } from "./google-places-autocomplete"
+
+const AVAILABLE_IMAGES = [
+  { value: "/craft-beer-bar-interior-with-taps.jpg", label: "Craft Beer Bar" },
+  { value: "/cocktails-on-bar-with-lake-view.jpg", label: "Cocktails & Lake View" },
+  { value: "/fresh-oysters-on-ice-with-lemon.jpg", label: "Fresh Oysters" },
+  { value: "/wine-glasses-and-cheese-board-cozy-cafe.jpg", label: "Wine & Cheese" },
+  { value: "/street-tacos-with-margarita-mexican-food.jpg", label: "Street Tacos & Margaritas" },
+  { value: "/sushi-rolls-platter-fresh-fish.jpg", label: "Sushi Rolls" },
+  { value: "/giant-pizza-slice-new-york-style.jpg", label: "Pizza Slice" },
+  { value: "/natural-wine-bottles-elegant-restaurant.jpg", label: "Natural Wine" },
+]
 
 interface SubmitDealDialogProps {
   open: boolean
@@ -31,6 +43,7 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
     phone: "",
     website: "",
     location: null as { lat: number; lng: number } | null,
+    image_url: AVAILABLE_IMAGES[0].value,
   })
   const [submitting, setSubmitting] = useState(false)
   const { toast } = useToast()
@@ -81,6 +94,7 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
         time_start: formData.start_time,
         time_end: formData.end_time,
         description: formData.deal_description,
+        image_url: formData.image_url,
       }
 
       const dealResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/`, {
@@ -108,6 +122,7 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
         phone: "",
         website: "",
         location: null,
+        image_url: AVAILABLE_IMAGES[0].value,
       })
       onOpenChange(false)
 
@@ -207,6 +222,26 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
               placeholder="e.g., $2 off all beers, half-price appetizers"
               className="min-h-[80px]"
             />
+          </div>
+
+          {/* Background Image */}
+          <div className="space-y-2">
+            <Label htmlFor="image_url">Background Image</Label>
+            <Select
+              value={formData.image_url}
+              onValueChange={(value) => setFormData({ ...formData, image_url: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select an image" />
+              </SelectTrigger>
+              <SelectContent>
+                {AVAILABLE_IMAGES.map((image) => (
+                  <SelectItem key={image.value} value={image.value}>
+                    {image.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-3">

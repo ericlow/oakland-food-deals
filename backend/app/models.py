@@ -38,6 +38,7 @@ class Deal(Base):
     drink_items = Column(Text)  # Comma-separated or JSON string
     pricing = Column(String(255))
     tags = Column(ARRAY(String))  # ['taco_tuesday', 'oyster_special', 'industry_night']
+    image_url = Column(String(500))  # Background image for the deal
     created_by = Column(String(100))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     vote_score = Column(Integer, default=0)

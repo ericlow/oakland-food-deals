@@ -48,6 +48,7 @@ class DealBase(BaseModel):
     drink_items: Optional[str] = None
     pricing: Optional[str] = None
     tags: Optional[list[str]] = None
+    image_url: Optional[str] = None
 
 
 class DealCreate(DealBase):
@@ -65,6 +66,7 @@ class DealUpdate(BaseModel):
     drink_items: Optional[str] = None
     pricing: Optional[str] = None
     tags: Optional[list[str]] = None
+    image_url: Optional[str] = None
 
 
 class Deal(DealBase):
