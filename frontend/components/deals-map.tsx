@@ -77,14 +77,13 @@ export function DealsMap() {
           const map = new window.google.maps.Map(mapRef.current, {
             center,
             zoom: 13,
-            mapId: "oakland_food_deals_map",
           })
           mapInstanceRef.current = map
 
           deals.forEach((deal) => {
             if (!deal.location) return
 
-            const marker = new window.google.maps.marker.AdvancedMarkerElement({
+            const marker = new window.google.maps.Marker({
               map,
               position: deal.location,
               title: deal.restaurant_name,

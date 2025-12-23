@@ -180,11 +180,11 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
         const map = new window.google.maps.Map(mapRef.current, {
           center: deal.location,
           zoom: 16,
-          mapId: "deal_details_map",
         })
         mapInstanceRef.current = map
 
-        new window.google.maps.marker.AdvancedMarkerElement({
+        // Use standard marker instead of AdvancedMarkerElement
+        new window.google.maps.Marker({
           map,
           position: deal.location,
           title: deal.restaurant_name,
