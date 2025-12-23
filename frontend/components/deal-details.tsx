@@ -168,17 +168,75 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
   const handleVote = async (direction: "up" | "down") => {
     if (!deal) return
 
-    // Check if already voted
-    if (hasVoted) {
-      toast({
-        title: "Already voted",
-        description: `You've already ${hasVoted === "up" ? "upvoted" : "downvoted"} this deal.`,
-        variant: "destructive",
-      })
-      return
-    }
-
     try {
+      const voteKey = `voted_deal_${deal.id}`
+
+      // If clicking the same vote button, remove the vote
+      if (hasVoted === direction) {
+        // Send opposite vote to cancel out the previous vote
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vote: direction === "up" ? -1 : 1 })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to remove vote')
+        }
+
+        const updatedDeal = await response.json()
+        setDeal({ ...deal, vote_count: updatedDeal.vote_score })
+
+        // Remove vote from localStorage
+        localStorage.removeItem(voteKey)
+        setHasVoted(null)
+
+        toast({
+          title: "Vote removed",
+          description: "Your vote has been removed.",
+        })
+        return
+      }
+
+      // If changing vote (had upvote, now downvote or vice versa)
+      if (hasVoted && hasVoted !== direction) {
+        // First, remove the old vote
+        const removeResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vote: hasVoted === "up" ? -1 : 1 })
+        })
+
+        if (!removeResponse.ok) {
+          throw new Error('Failed to change vote')
+        }
+
+        // Then add the new vote
+        const addResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vote: direction === "up" ? 1 : -1 })
+        })
+
+        if (!addResponse.ok) {
+          throw new Error('Failed to change vote')
+        }
+
+        const updatedDeal = await addResponse.json()
+        setDeal({ ...deal, vote_count: updatedDeal.vote_score })
+
+        // Update vote in localStorage
+        localStorage.setItem(voteKey, direction)
+        setHasVoted(direction)
+
+        toast({
+          title: "Vote changed",
+          description: `Changed to ${direction === "up" ? "upvote" : "downvote"}.`,
+        })
+        return
+      }
+
+      // New vote (no previous vote)
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -193,7 +251,6 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
       setDeal({ ...deal, vote_count: updatedDeal.vote_score })
 
       // Store vote in localStorage
-      const voteKey = `voted_deal_${deal.id}`
       localStorage.setItem(voteKey, direction)
       setHasVoted(direction)
 
@@ -566,7 +623,6 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleVote("up")}
-                      disabled={hasVoted !== null}
                       className={`gap-2 bg-white/90 hover:bg-white text-foreground ${hasVoted === "up" ? "border-green-500 border-2" : ""}`}
                     >
                       <ArrowUp className="h-4 w-4" />
@@ -577,7 +633,6 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleVote("down")}
-                      disabled={hasVoted !== null}
                       className={`gap-2 bg-white/90 hover:bg-white text-foreground ${hasVoted === "down" ? "border-red-500 border-2" : ""}`}
                     >
                       <ArrowDown className="h-4 w-4" />
