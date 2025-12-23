@@ -86,13 +86,28 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
   useEffect(() => {
     const fetchDeal = async () => {
       try {
+        console.log('🔍 Starting to fetch deal, dealId:', dealId)
         // Fetch the deal from the API
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/deals-enriched`)
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/deals-enriched`
+        console.log('🔍 Fetching from:', apiUrl)
+        const response = await fetch(apiUrl)
+        console.log('🔍 Response status:', response.status, response.ok)
         if (!response.ok) {
           throw new Error('Failed to fetch deals')
         }
         const deals = await response.json()
+        console.log('🔍 Fetched deals count:', deals.length)
         const foundDeal = deals.find((d: Deal) => d.id === dealId)
+        console.log('🔍 Looking for deal with id:', dealId, 'Type:', typeof dealId)
+
+        console.log('📍 Found deal:', {
+          id: foundDeal?.id,
+          name: foundDeal?.restaurant_name,
+          hasLocation: !!foundDeal?.location,
+          location: foundDeal?.location,
+          allDealsCount: deals.length,
+          dealKeys: foundDeal ? Object.keys(foundDeal) : []
+        })
 
         setDeal(foundDeal || null)
 
@@ -172,12 +187,22 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
       dealId: deal?.id
     })
 
-    if (deal?.location && mapRef.current) {
-      console.log('✅ Conditions met, calling loadGoogleMap()')
-      loadGoogleMap()
-    } else {
-      console.log('❌ Conditions not met for map loading')
-    }
+    // Use a small delay to ensure the DOM ref is ready
+    const timer = setTimeout(() => {
+      console.log('⏰ After timeout, checking again:', {
+        hasMapRef: !!mapRef.current,
+        hasLocation: !!deal?.location
+      })
+
+      if (deal?.location && mapRef.current) {
+        console.log('✅ Conditions met, calling loadGoogleMap()')
+        loadGoogleMap()
+      } else {
+        console.log('❌ Conditions not met for map loading')
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [deal])
 
   const loadGoogleMap = async () => {
