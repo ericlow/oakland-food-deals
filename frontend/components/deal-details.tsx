@@ -57,6 +57,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
   const [submitting, setSubmitting] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [hasVoted, setHasVoted] = useState<"up" | "down" | null>(null)
+  const [commentVotes, setCommentVotes] = useState<Record<number, "up" | "down" | null>>({})
   const [editForm, setEditForm] = useState({
     restaurant_name: "",
     days: [] as string[],
@@ -98,14 +99,27 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
         const commentsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments/?deal_id=${dealId}`)
         if (commentsResponse.ok) {
           const commentsData = await commentsResponse.json()
-          setComments(commentsData.map((c: any) => ({
+          const mappedComments = commentsData.map((c: any) => ({
             id: c.id,
             deal_id: c.deal_id,
             comment_text: c.text,
             vote_count: c.vote_score,
             created_by: c.created_by,
             created_at: c.created_at,
-          })).sort((a: Comment, b: Comment) => b.vote_count - a.vote_count))
+          })).sort((a: Comment, b: Comment) => b.vote_count - a.vote_count)
+
+          setComments(mappedComments)
+
+          // Load comment votes from localStorage
+          const votes: Record<number, "up" | "down" | null> = {}
+          mappedComments.forEach((comment: Comment) => {
+            const voteKey = `voted_comment_${comment.id}`
+            const existingVote = localStorage.getItem(voteKey)
+            if (existingVote === "up" || existingVote === "down") {
+              votes[comment.id] = existingVote
+            }
+          })
+          setCommentVotes(votes)
         } else {
           setComments([])
         }
@@ -284,6 +298,89 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
 
   const handleCommentVote = async (commentId: number, direction: "up" | "down") => {
     try {
+      const voteKey = `voted_comment_${commentId}`
+      const currentVote = commentVotes[commentId]
+
+      // If clicking the same vote button, remove the vote
+      if (currentVote === direction) {
+        // Send opposite vote to cancel out the previous vote
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments/${commentId}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vote: direction === "up" ? -1 : 1 })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to remove vote')
+        }
+
+        const updatedComment = await response.json()
+        setComments((prev) =>
+          prev
+            .map((comment) =>
+              comment.id === commentId
+                ? { ...comment, vote_count: updatedComment.vote_score }
+                : comment,
+            )
+            .sort((a, b) => b.vote_count - a.vote_count),
+        )
+
+        // Remove vote from localStorage
+        localStorage.removeItem(voteKey)
+        setCommentVotes({ ...commentVotes, [commentId]: null })
+
+        toast({
+          description: "Vote removed",
+        })
+        return
+      }
+
+      // If changing vote (had upvote, now downvote or vice versa)
+      if (currentVote && currentVote !== direction) {
+        // First, remove the old vote
+        const removeResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments/${commentId}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vote: currentVote === "up" ? -1 : 1 })
+        })
+
+        if (!removeResponse.ok) {
+          throw new Error('Failed to change vote')
+        }
+
+        // Then add the new vote
+        const addResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments/${commentId}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vote: direction === "up" ? 1 : -1 })
+        })
+
+        if (!addResponse.ok) {
+          throw new Error('Failed to change vote')
+        }
+
+        const updatedComment = await addResponse.json()
+        setComments((prev) =>
+          prev
+            .map((comment) =>
+              comment.id === commentId
+                ? { ...comment, vote_count: updatedComment.vote_score }
+                : comment,
+            )
+            .sort((a, b) => b.vote_count - a.vote_count),
+        )
+
+        // Update vote in localStorage
+        localStorage.setItem(voteKey, direction)
+        setCommentVotes({ ...commentVotes, [commentId]: direction })
+
+        toast({
+          description: `Changed to ${direction === "up" ? "upvote" : "downvote"}`,
+        })
+        return
+      }
+
+      // New vote (no previous vote)
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments/${commentId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -304,6 +401,11 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
           )
           .sort((a, b) => b.vote_count - a.vote_count),
       )
+
+      // Store vote in localStorage
+      localStorage.setItem(voteKey, direction)
+      setCommentVotes({ ...commentVotes, [commentId]: direction })
+
       toast({
         description: direction === "up" ? "Comment upvoted!" : "Comment downvoted!",
       })
@@ -771,7 +873,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleCommentVote(comment.id, "up")}
-                          className="h-8 gap-1 px-2"
+                          className={`h-8 gap-1 px-2 ${commentVotes[comment.id] === "up" ? "border-green-500 border-2" : ""}`}
                         >
                           <ArrowUp className="h-3.5 w-3.5" />
                         </Button>
@@ -782,7 +884,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleCommentVote(comment.id, "down")}
-                          className="h-8 gap-1 px-2"
+                          className={`h-8 gap-1 px-2 ${commentVotes[comment.id] === "down" ? "border-red-500 border-2" : ""}`}
                         >
                           <ArrowDown className="h-3.5 w-3.5" />
                         </Button>
