@@ -219,10 +219,6 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
         localStorage.removeItem(voteKey)
         setHasVoted(null)
 
-        toast({
-          title: "Vote removed",
-          description: "Your vote has been removed.",
-        })
         return
       }
 
@@ -257,10 +253,6 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
         localStorage.setItem(voteKey, direction)
         setHasVoted(direction)
 
-        toast({
-          title: "Vote changed",
-          description: `Changed to ${direction === "up" ? "upvote" : "downvote"}.`,
-        })
         return
       }
 
@@ -281,11 +273,6 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
       // Store vote in localStorage
       localStorage.setItem(voteKey, direction)
       setHasVoted(direction)
-
-      toast({
-        title: direction === "up" ? "Upvoted!" : "Downvoted!",
-        description: "Your vote has been recorded.",
-      })
     } catch (error) {
       console.error('Error voting:', error)
       toast({
@@ -329,9 +316,6 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
         localStorage.removeItem(voteKey)
         setCommentVotes({ ...commentVotes, [commentId]: null })
 
-        toast({
-          description: "Vote removed",
-        })
         return
       }
 
@@ -374,9 +358,6 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
         localStorage.setItem(voteKey, direction)
         setCommentVotes({ ...commentVotes, [commentId]: direction })
 
-        toast({
-          description: `Changed to ${direction === "up" ? "upvote" : "downvote"}`,
-        })
         return
       }
 
@@ -405,10 +386,6 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
       // Store vote in localStorage
       localStorage.setItem(voteKey, direction)
       setCommentVotes({ ...commentVotes, [commentId]: direction })
-
-      toast({
-        description: direction === "up" ? "Comment upvoted!" : "Comment downvoted!",
-      })
     } catch (error) {
       console.error('Error voting on comment:', error)
       toast({
