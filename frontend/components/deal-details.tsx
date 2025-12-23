@@ -93,9 +93,23 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
         const foundDeal = deals.find((d: Deal) => d.id === dealId)
 
         setDeal(foundDeal || null)
-        // Comments endpoint would be: /comments/?deal_id=${dealId}
-        // For now, use empty array since we don't have comments in DB yet
-        setComments([])
+
+        // Fetch comments for this deal
+        const commentsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments/?deal_id=${dealId}`)
+        if (commentsResponse.ok) {
+          const commentsData = await commentsResponse.json()
+          setComments(commentsData.map((c: any) => ({
+            id: c.id,
+            deal_id: c.deal_id,
+            comment_text: c.text,
+            vote_count: c.vote_score,
+            created_by: c.created_by,
+            created_at: c.created_at,
+          })).sort((a: Comment, b: Comment) => b.vote_count - a.vote_count))
+        } else {
+          setComments([])
+        }
+
         setLoading(false)
 
         if (foundDeal) {
@@ -303,28 +317,54 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
     }
   }
 
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newComment.trim()) return
 
     setSubmitting(true)
-    setTimeout(() => {
-      const newCommentObj: Comment = {
-        id: Date.now(),
-        deal_id: dealId,
-        comment_text: newComment,
-        vote_count: 0,
-        created_by: "anonymous",
-        created_at: new Date().toISOString(),
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: newComment,
+          deal_id: dealId,
+          created_by: "anonymous"
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to post comment')
       }
-      setComments([...comments, newCommentObj].sort((a, b) => b.vote_count - a.vote_count))
+
+      const newCommentObj = await response.json()
+
+      // Add new comment to list and sort by vote count
+      setComments([...comments, {
+        id: newCommentObj.id,
+        deal_id: newCommentObj.deal_id,
+        comment_text: newCommentObj.text,
+        vote_count: newCommentObj.vote_score,
+        created_by: newCommentObj.created_by,
+        created_at: newCommentObj.created_at,
+      }].sort((a, b) => b.vote_count - a.vote_count))
+
       setNewComment("")
-      setSubmitting(false)
       toast({
         title: "Comment posted!",
         description: "Thanks for sharing your thoughts.",
       })
-    }, 300)
+    } catch (error) {
+      console.error('Error posting comment:', error)
+      toast({
+        title: "Error",
+        description: "Failed to post comment. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleEditSubmit = async (e: React.FormEvent) => {
