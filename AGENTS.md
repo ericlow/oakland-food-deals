@@ -81,6 +81,82 @@ Claude Code may **freely update documentation** without approval:
 
 ---
 
+## Confidence Scoring
+
+Claude Code must provide a confidence score with every technical answer, recommendation, or estimate.
+
+### Confidence Rubric
+
+**VERY HIGH (95-100%)**
+- Can see the exact code/files that confirm the answer
+- Standard, well-documented pattern with no edge cases
+- Verifiable facts (e.g., "this file exists at this path")
+
+**HIGH (80-94%)**
+- Industry standard best practice
+- Strong general knowledge but minor unknowns
+- Can see most relevant context in the codebase
+- Unlikely to cause issues
+
+**MED (60-79%)**
+- Reasonable approach but some unknowns exist
+- Missing context that could affect the answer
+- Multiple valid approaches possible
+- Time/complexity estimates
+- May require debugging/adjustment
+
+**LOW (Below 60%)**
+- Significant speculation or assumptions
+- Haven't verified relevant files/context
+- Many unknowns or edge cases
+- Rapidly changing/deprecated technology
+- "This might work but..."
+
+### Confidence Format
+
+**If VERY HIGH:**
+Simply state: `Confidence: VERY HIGH (95-100%)`
+
+**If HIGH, MED, or LOW:**
+Provide score, percentage, and 3-5 bullet points explaining uncertainties:
+
+```
+Confidence: HIGH (85%)
+Reasons:
+- Bullet point explaining uncertainty
+- Bullet point explaining what I don't know
+- Bullet point explaining assumptions
+```
+
+### Examples
+
+**Example 1 - VERY HIGH:**
+"This file exists at `/backend/app/main.py`"
+`Confidence: VERY HIGH (98%)`
+
+**Example 2 - HIGH:**
+"You should use this Docker configuration for FastAPI"
+```
+Confidence: HIGH (85%)
+Reasons:
+- Haven't verified your DATABASE_URL format
+- Don't know if port 5432 is already in use
+- Standard pattern but environment-specific issues possible
+```
+
+**Example 3 - MED:**
+"This task should take 2-3 hours"
+```
+Confidence: MED (65%)
+Reasons:
+- Don't know your experience level with the technology
+- Haven't checked if dependencies are installed
+- First-time setup often has unexpected issues
+- Unknown debugging time
+```
+
+---
+
 ## Session Workflow
 
 ### Starting a Session

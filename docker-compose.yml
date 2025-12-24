@@ -1,0 +1,10 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:crapcrap@host.docker.internal:5432/oakland_food_deals
+    volumes:
+      - ./backend:/app
+
