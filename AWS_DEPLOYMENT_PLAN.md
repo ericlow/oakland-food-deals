@@ -532,6 +532,127 @@ Many engineers learn these skills on the job over 1-2 years. This project compre
 
 ---
 
+## Time Tracking
+
+### Overview
+**Total Estimated:** 32-54 hours of focused work
+**Total Actual:** TBD
+**Completion:** In progress
+
+### Step 1: Local Containerization ✅ COMPLETE
+**Estimated:** 1.5-3 hours
+**Actual:** 5.5-7 hours
+**Variance:** +4 hours (2-3x over estimate)
+**Completed:** December 23, 2024
+
+**Breakdown:**
+- Backend Docker setup: Est 1h → Actual 3-4h
+  - Created Dockerfile (multiple syntax errors fixed)
+  - Created docker-compose.yml (YAML formatting issues)
+  - Debugged port conflicts with existing PostgreSQL
+  - Configured .env files for security
+- Frontend env vars: Est 30m → Actual 1h
+  - Updated google-maps-loader.ts
+  - Created .env.example
+  - Deleted old API route
+  - Testing and dev server restarts
+- Static export attempt (FAILED PATH): Est 30m → Actual 1.5-2h
+  - Added output: 'export' to config
+  - Hit generateStaticParams errors
+  - Researched solutions online
+  - Tried dynamicParams (incompatible)
+  - Reverted all changes
+  - Decided to use server mode instead
+
+**Lessons Learned:**
+- First-time Docker has significant debugging overhead
+- YAML syntax errors are common (spaces, colons)
+- Wrong technical direction (static export) cost 1.5-2 hours
+- Reality: 2-3x initial estimates for learning new tools
+
+---
+
+### Step 2: Production Docker Setup
+**Estimated:** 4-9 hours (adjusted based on Step 1 variance)
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Create Dockerfile for Next.js frontend (1-2h)
+- Create production docker-compose.yml with Nginx (2-4h)
+- Configure Nginx routing (1-2h)
+- Test full stack locally (1-2h)
+
+---
+
+### Step 3: AWS Account & IAM Setup
+**Estimated:** 2-4 hours
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Create AWS account (30m-1h)
+- Set up billing alerts (15-30m)
+- Configure IAM users and roles (1-2h)
+- Install and configure AWS CLI (30m-1h)
+
+---
+
+### Step 4: Terraform Infrastructure
+**Estimated:** 10-15 hours (highest complexity, steep learning curve)
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Learn Terraform basics (2-3h)
+- Write EC2 configuration (2-3h)
+- Write RDS configuration (2-3h)
+- Write networking (VPC, security groups) (2-4h)
+- Test and debug terraform apply (2-4h)
+
+---
+
+### Step 5: Deploy to AWS
+**Estimated:** 8-12 hours (expect significant debugging)
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Run Terraform to create infrastructure (1-2h)
+- SSH to EC2 and install Docker (1h)
+- Deploy containers to EC2 (2-3h)
+- Configure Nginx for SSL (Let's Encrypt) (2-3h)
+- Debug connection/networking issues (2-4h)
+
+---
+
+### Step 6: CI/CD Pipeline
+**Estimated:** 4-6 hours
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Learn GitHub Actions basics (1-2h)
+- Write workflow for backend deployment (1-2h)
+- Write workflow for frontend deployment (1-2h)
+- Test and debug pipeline (1-2h)
+
+---
+
+### Step 7: Production Hardening
+**Estimated:** 4-8 hours
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Set up CloudWatch monitoring (1-2h)
+- Configure RDS automated backups (1h)
+- Add health checks (1-2h)
+- Performance testing (1-2h)
+- Security review (1-2h)
+
+---
+
 ## Questions & Decisions Log
 
 ### Decisions Made
