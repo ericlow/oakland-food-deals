@@ -39,12 +39,8 @@ export async function loadGoogleMapsAPI(): Promise<void> {
   isLoading = true
   loadPromise = new Promise<void>(async (resolve, reject) => {
     try {
-      const response = await fetch("/api/google-maps-key")
-      const { apiKey } = await response.json()
 
-      if (!apiKey) {
-        throw new Error("Google Maps API key not found")
-      }
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
       const script = document.createElement("script")
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`

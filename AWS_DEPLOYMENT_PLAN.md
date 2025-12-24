@@ -42,46 +42,45 @@ This project will be deployed to AWS using a **dual-deployment strategy** to max
 
 **Architecture:**
 ```
-┌─────────────────┐
-│   CloudFront    │ (CDN - FREE)
-│      (CDN)      │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│    S3 Bucket    │ (Static Next.js - FREE)
-│  (Next.js SSG)  │ 5GB storage, minimal traffic
-└─────────────────┘
-         │
-         │ API Calls (https://api.oaklandfooddeals.com)
-         ▼
-┌─────────────────┐
-│  EC2 t2.micro   │ (FREE - 750 hours/month)
-│  Docker Compose │ • FastAPI container
-│    + Nginx      │ • Nginx reverse proxy
-└────────┬────────┘ • Automated deployments
-         │
-         ▼
-┌─────────────────┐
-│  RDS Postgres   │ (FREE - 750 hours/month)
-│  db.t3.micro    │ 20GB storage
-└─────────────────┘
+┌─────────────────────────────────────────┐
+│         EC2 t2.micro Instance           │ (FREE - 750 hours/month)
+│  ┌───────────────────────────────────┐  │
+│  │   Nginx Reverse Proxy (Port 80)   │  │
+│  └─────┬──────────────────────┬──────┘  │
+│        │                      │         │
+│        ▼                      ▼         │
+│  ┌──────────┐          ┌──────────┐    │
+│  │ Next.js  │          │ FastAPI  │    │
+│  │  :3000   │          │  :8000   │    │
+│  │ (Docker) │          │ (Docker) │    │
+│  └──────────┘          └──────────┘    │
+│                                         │
+│  • Both apps in docker-compose          │
+│  • Nginx routes by path                │
+│  • SSL via Let's Encrypt               │
+└─────────────────────────────────────────┘
+                   │
+                   ▼
+         ┌─────────────────┐
+         │  RDS Postgres   │ (FREE - 750 hours/month)
+         │  db.t3.micro    │ 20GB storage
+         └─────────────────┘
 ```
 
 **Key Technologies:**
-- **Next.js Static Export:** Build to static HTML/CSS/JS files
-- **Docker:** FastAPI runs in container on EC2
+- **Next.js Server:** Full Next.js with dynamic routes (not static export)
+- **Docker Compose:** Both Next.js + FastAPI in containers on same instance
+- **Nginx:** Reverse proxy routing traffic to both apps
 - **Terraform:** All infrastructure defined as code
 - **GitHub Actions:** Auto-deploy on git push to main
 
 **Cost:** $0/month (within free tier limits)
 
 **AWS Services:**
-- S3 (Static hosting)
-- CloudFront (CDN)
-- EC2 t2.micro (1 instance, 750 hrs = 24/7)
+- EC2 t2.micro (1 instance running both frontend + backend, 750 hrs = 24/7)
 - RDS db.t3.micro (750 hrs = 24/7)
 - Security Groups, IAM roles
+- Route 53 (optional, for DNS)
 
 **What You Learn:**
 - ✅ Docker containerization
@@ -269,43 +268,41 @@ Jobs:
 
 ## Next.js Configuration
 
-### Static Export Configuration
+### Server Mode (Not Static Export)
 
-To deploy Next.js to S3, we need to configure static export:
+**Decision:** Running Next.js as a server instead of static export.
 
+**Why:**
+- User-generated content (deals) are created dynamically
+- Dynamic routes `/deals/[id]` don't work well with static export
+- Can't pre-generate pages for content that doesn't exist yet
+- Server mode handles dynamic routes perfectly
+
+**Configuration:**
 ```typescript
-// next.config.js
+// next.config.mjs (current)
 const nextConfig = {
-  output: 'export',
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
-    unoptimized: true, // Required for static export
+    unoptimized: true,
   },
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-  },
-  trailingSlash: true, // Better S3 compatibility
 }
+// Note: NO output: 'export' - we're running as a server
 ```
 
-**What We Keep:**
-- All React components and UI
-- Client-side routing
-- API calls to FastAPI backend
-- All current functionality
+**What We Get:**
+- ✅ All React components and UI
+- ✅ Dynamic routing works perfectly
+- ✅ API calls to FastAPI backend
+- ✅ Can handle user-generated content
+- ✅ No build-time limitations
 
-**What We Lose (Not Used Anyway):**
-- Server-side rendering (SSR)
-- Incremental Static Regeneration (ISR)
-- Next.js API routes (using FastAPI instead)
-- Middleware
-- Image optimization
-
-**Why This Works:**
-Our app is a dynamic, user-generated content platform. We don't need SSR because:
-- Content is submitted by users, not pre-rendered
-- No SEO benefit from server rendering
-- All data fetched from API on client side
-- Static export is simpler and cheaper to host
+**Deployment Approach:**
+- Next.js runs in Docker container on EC2
+- Production build served via `npm start`
+- Nginx reverse proxy handles SSL and routing
 
 ---
 
@@ -329,42 +326,72 @@ EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-### Docker Compose (Local Development)
+### Docker Compose (Current - Local Development)
 
+**Current setup uses existing PostgreSQL:**
 ```yaml
-# docker-compose.yml
-version: '3.8'
-
+# docker-compose.yml (current)
 services:
   backend:
     build: ./backend
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/oakland_food_deals
-    depends_on:
-      - db
-
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: oakland_food_deals
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:5432/${POSTGRES_DB}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
+      - ./backend:/app
 ```
+
+Uses `.env` file for credentials (not committed to git).
+
+### Docker Compose (Future - AWS Production)
+
+**For AWS deployment, will include both frontend + backend:**
+```yaml
+# docker-compose.prod.yml (to be created)
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${RDS_ENDPOINT}:5432/${POSTGRES_DB}
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - frontend
+      - backend
+```
+
+Nginx will route:
+- `/` → Next.js (port 3000)
+- `/api` → FastAPI (port 8000)
 
 ---
 
 ## Deployment Timeline
 
 ### Week 1-2: Phase 1 Setup
-- [ ] Dockerize FastAPI backend
-- [ ] Configure Next.js for static export
+- [x] Dockerize FastAPI backend (COMPLETED)
+- [x] Configure environment variables for both apps (COMPLETED)
+- [ ] Create Dockerfile for Next.js frontend
+- [ ] Create production docker-compose.yml with Nginx
 - [ ] Write Terraform for production infrastructure
 - [ ] Set up GitHub Actions CI/CD
 - [ ] Deploy to AWS
@@ -481,10 +508,13 @@ Many engineers learn these skills on the job over 1-2 years. This project compre
 
 ### Immediate (This Week)
 1. ✅ Document deployment strategy (this document)
-2. Update project overview with actual tech stack
-3. Create Dockerfile for FastAPI
-4. Configure Next.js for static export
-5. Test local Docker Compose setup
+2. ✅ Create Dockerfile for FastAPI backend
+3. ✅ Configure environment variables (.env files)
+4. ✅ Test local Docker setup for backend
+5. ✅ Configure Next.js for server mode (dynamic routes work)
+6. [ ] Create Dockerfile for Next.js frontend
+7. [ ] Create production docker-compose.yml with Nginx
+8. [ ] Test full stack locally with docker-compose
 
 ### Short-term (Next 1-2 Weeks)
 1. Write Terraform for Phase 1
@@ -502,16 +532,139 @@ Many engineers learn these skills on the job over 1-2 years. This project compre
 
 ---
 
+## Time Tracking
+
+### Overview
+**Total Estimated:** 32-54 hours of focused work
+**Total Actual:** TBD
+**Completion:** In progress
+
+### Step 1: Local Containerization ✅ COMPLETE
+**Estimated:** 1.5-3 hours
+**Actual:** 5.5-7 hours
+**Variance:** +4 hours (2-3x over estimate)
+**Completed:** December 23, 2024
+
+**Breakdown:**
+- Backend Docker setup: Est 1h → Actual 3-4h
+  - Created Dockerfile (multiple syntax errors fixed)
+  - Created docker-compose.yml (YAML formatting issues)
+  - Debugged port conflicts with existing PostgreSQL
+  - Configured .env files for security
+- Frontend env vars: Est 30m → Actual 1h
+  - Updated google-maps-loader.ts
+  - Created .env.example
+  - Deleted old API route
+  - Testing and dev server restarts
+- Static export attempt (FAILED PATH): Est 30m → Actual 1.5-2h
+  - Added output: 'export' to config
+  - Hit generateStaticParams errors
+  - Researched solutions online
+  - Tried dynamicParams (incompatible)
+  - Reverted all changes
+  - Decided to use server mode instead
+
+**Lessons Learned:**
+- First-time Docker has significant debugging overhead
+- YAML syntax errors are common (spaces, colons)
+- Wrong technical direction (static export) cost 1.5-2 hours
+- Reality: 2-3x initial estimates for learning new tools
+
+---
+
+### Step 2: Production Docker Setup
+**Estimated:** 4-9 hours (adjusted based on Step 1 variance)
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Create Dockerfile for Next.js frontend (1-2h)
+- Create production docker-compose.yml with Nginx (2-4h)
+- Configure Nginx routing (1-2h)
+- Test full stack locally (1-2h)
+
+---
+
+### Step 3: AWS Account & IAM Setup
+**Estimated:** 2-4 hours
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Create AWS account (30m-1h)
+- Set up billing alerts (15-30m)
+- Configure IAM users and roles (1-2h)
+- Install and configure AWS CLI (30m-1h)
+
+---
+
+### Step 4: Terraform Infrastructure
+**Estimated:** 10-15 hours (highest complexity, steep learning curve)
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Learn Terraform basics (2-3h)
+- Write EC2 configuration (2-3h)
+- Write RDS configuration (2-3h)
+- Write networking (VPC, security groups) (2-4h)
+- Test and debug terraform apply (2-4h)
+
+---
+
+### Step 5: Deploy to AWS
+**Estimated:** 8-12 hours (expect significant debugging)
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Run Terraform to create infrastructure (1-2h)
+- SSH to EC2 and install Docker (1h)
+- Deploy containers to EC2 (2-3h)
+- Configure Nginx for SSL (Let's Encrypt) (2-3h)
+- Debug connection/networking issues (2-4h)
+
+---
+
+### Step 6: CI/CD Pipeline
+**Estimated:** 4-6 hours
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Learn GitHub Actions basics (1-2h)
+- Write workflow for backend deployment (1-2h)
+- Write workflow for frontend deployment (1-2h)
+- Test and debug pipeline (1-2h)
+
+---
+
+### Step 7: Production Hardening
+**Estimated:** 4-8 hours
+**Actual:** TBD
+**Status:** Not started
+
+**Planned Tasks:**
+- Set up CloudWatch monitoring (1-2h)
+- Configure RDS automated backups (1h)
+- Add health checks (1-2h)
+- Performance testing (1-2h)
+- Security review (1-2h)
+
+---
+
 ## Questions & Decisions Log
 
 ### Decisions Made
 - ✅ Use dual deployment strategy (Phase 1 free, Phase 2 learning)
-- ✅ Next.js static export for frontend (not SSR)
+- ✅ Next.js server mode (NOT static export) - better for dynamic user content
+- ✅ Run both Next.js + FastAPI on same EC2 instance (still free tier)
 - ✅ Docker for containerization
 - ✅ Terraform for IaC
 - ✅ GitHub Actions for CI/CD
 - ✅ Stay within free tier for Phase 1
 - ✅ Small investment ($2) for Phase 2 ECS learning
+- ✅ Use existing PostgreSQL in Docker (not separate db service)
 
 ### Open Questions
 - [ ] Custom domain name strategy (Route53 or external registrar?)
