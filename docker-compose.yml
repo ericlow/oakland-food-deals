@@ -4,7 +4,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:crapcrap@host.docker.internal:5432/oakland_food_deals
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:5432/${POSTGRES_DB}
     volumes:
       - ./backend:/app
 
