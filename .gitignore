@@ -217,3 +217,13 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+  # Terraform
+  .terraform/
+  *.tfstate
+  *.tfstate.backup
+  terraform.tfvars
+  *.tfvars
+
+
+
