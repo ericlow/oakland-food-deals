@@ -1,7 +1,7 @@
 # Oakland Food Deals - AWS Deployment Plan
 
-**Last Updated:** December 23, 2024
-**Status:** Planning Phase
+**Last Updated:** December 25, 2025
+**Status:** In Progress (Step 3 of 7 complete - 43%)
 
 ---
 
@@ -390,11 +390,12 @@ Nginx will route:
 ### Week 1-2: Phase 1 Setup
 - [x] Dockerize FastAPI backend (COMPLETED)
 - [x] Configure environment variables for both apps (COMPLETED)
-- [ ] Create Dockerfile for Next.js frontend
-- [ ] Create production docker-compose.yml with Nginx
-- [ ] Write Terraform for production infrastructure
-- [ ] Set up GitHub Actions CI/CD
+- [x] Create Dockerfile for Next.js frontend (COMPLETED)
+- [x] Create production docker-compose.yml with Nginx (COMPLETED)
+- [x] Set up AWS account and IAM (COMPLETED)
+- [ ] Write Terraform for production infrastructure (IN PROGRESS - Step 4)
 - [ ] Deploy to AWS
+- [ ] Set up GitHub Actions CI/CD
 - [ ] Configure custom domain and SSL
 
 ### Week 3-4: Production Hardening
@@ -512,16 +513,17 @@ Many engineers learn these skills on the job over 1-2 years. This project compre
 3. ✅ Configure environment variables (.env files)
 4. ✅ Test local Docker setup for backend
 5. ✅ Configure Next.js for server mode (dynamic routes work)
-6. [ ] Create Dockerfile for Next.js frontend
-7. [ ] Create production docker-compose.yml with Nginx
-8. [ ] Test full stack locally with docker-compose
+6. ✅ Create Dockerfile for Next.js frontend
+7. ✅ Create production docker-compose.yml with Nginx
+8. ✅ Test full stack locally with docker-compose
+9. ✅ Set up AWS account and configure IAM
 
 ### Short-term (Next 1-2 Weeks)
-1. Write Terraform for Phase 1
-2. Set up AWS account and configure IAM
-3. Create GitHub Actions workflows
-4. Deploy Phase 1 to AWS
-5. Configure monitoring and alerts
+1. **[IN PROGRESS]** Write Terraform for Phase 1 (Step 4)
+2. Deploy Phase 1 to AWS (Step 5)
+3. Create GitHub Actions workflows (Step 6)
+4. Configure monitoring and alerts (Step 7)
+5. Production hardening
 
 ### Medium-term (Next Month)
 1. Harden production deployment
@@ -536,8 +538,9 @@ Many engineers learn these skills on the job over 1-2 years. This project compre
 
 ### Overview
 **Total Estimated:** 32-54 hours of focused work
-**Total Actual:** TBD
-**Completion:** In progress
+**Total Actual So Far:** ~11.5-13 hours (Steps 1-3 complete)
+**Remaining Estimated:** 20.5-41 hours (Steps 4-7)
+**Completion:** 3 of 7 steps complete (~43% done)
 
 ### Step 1: Local Containerization ✅ COMPLETE
 **Estimated:** 1.5-3 hours
@@ -572,29 +575,77 @@ Many engineers learn these skills on the job over 1-2 years. This project compre
 
 ---
 
-### Step 2: Production Docker Setup
+### Step 2: Production Docker Setup ✅ COMPLETE
 **Estimated:** 4-9 hours (adjusted based on Step 1 variance)
-**Actual:** TBD
-**Status:** Not started
+**Actual:** 3-4 hours
+**Variance:** Beat estimate by 25% (came in under low-end)
+**Completed:** December 25, 2024
 
-**Planned Tasks:**
-- Create Dockerfile for Next.js frontend (1-2h)
-- Create production docker-compose.yml with Nginx (2-4h)
-- Configure Nginx routing (1-2h)
-- Test full stack locally (1-2h)
+**Completed Tasks:**
+- Created Dockerfile for Next.js frontend with multi-stage build
+- Created production docker-compose.yml with frontend, backend, and Nginx services
+- Configured nginx.conf for routing (/api → backend, / → frontend)
+- Tested full stack locally - all 3 containers running successfully
+- Merged docker-frontend branch to main (PR #2)
+
+**Lessons Learned:**
+- Previous Docker experience from Step 1 significantly improved efficiency
+- Multi-stage Dockerfile pattern became easier on second implementation
+- Nginx configuration was straightforward with proper documentation
+- Testing caught environment variable issues early
+- Overall: 2x faster than Step 1 relative to complexity
+
+**Docker Learning Session (Dec 25, 1:27-1:54 AM):**
+- ✅ Reviewed multi-stage build concepts
+- ✅ Compared single-stage vs multi-stage approaches
+- ✅ Understood industry knowledge landscape
+- ✅ Duration: 28 minutes
+
+**Next Session:**
+- Ready to begin Step 3: AWS Account & IAM Setup
+- Estimated: 2-4 hours
+- Prerequisites: None (fresh start)
 
 ---
 
-### Step 3: AWS Account & IAM Setup
+### Step 3: AWS Account & IAM Setup ✅ COMPLETE
 **Estimated:** 2-4 hours
-**Actual:** TBD
-**Status:** Not started
+**Actual:** 2 hours 3 minutes
+**Variance:** Right at low end of estimate (beat by 3%)
+**Completed:** December 25, 2025
 
-**Planned Tasks:**
-- Create AWS account (30m-1h)
-- Set up billing alerts (15-30m)
-- Configure IAM users and roles (1-2h)
-- Install and configure AWS CLI (30m-1h)
+**Completed Tasks:**
+- Created AWS account (9.5 min)
+- Set up billing alerts at $0.01 threshold (35 min)
+- Created IAM user (eric-admin) with AdministratorAccess (49 min)
+- Tested IAM user console login (2 min)
+- Created access keys for AWS CLI (11 min)
+- Installed AWS CLI v2.32.23 via Homebrew (1 min)
+- Configured AWS CLI with credentials (8.5 min)
+- Validated setup with 4 CLI tests (7 min)
+
+**Lessons Learned:**
+- IAM concepts (users vs roles) required explanation time (~40 min discussion)
+- CloudShell vs access keys decision required context
+- Validation tests confirmed everything working correctly:
+  - `aws sts get-caller-identity` - verified IAM user authentication
+  - `aws iam get-user` - confirmed user details
+  - `aws cloudwatch describe-alarms` - verified billing alert exists and is in OK state
+  - `aws s3 ls` - tested AdministratorAccess permissions (empty result expected)
+- Billing alert shows $0.00 current charges (within free tier)
+- Time efficiency improved due to clear AWS documentation
+
+**Security Best Practices Implemented:**
+- Never using root account for daily work
+- IAM user follows principle of least privilege
+- Billing alert at $0.01 threshold for cost protection
+- MFA not enabled (optional for learning environment)
+- Access keys stored securely in ~/.aws/credentials
+
+**Next Session:**
+- Ready to begin Step 4: Terraform Infrastructure
+- Estimated: 10-15 hours
+- Prerequisites: AWS account and CLI configured ✅
 
 ---
 
