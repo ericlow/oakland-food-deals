@@ -238,6 +238,49 @@ This project uses a **two-phase deployment approach** to maximize both cost effi
 
 ## Future Enhancements
 
+### Database Optimizations
+
+#### PostGIS Integration for Efficient Geospatial Queries
+
+**Current State:**
+- Using simple `latitude` and `longitude` float fields
+- Location queries use `BETWEEN` clauses on lat/long (sequential scan)
+- No spatial indexing
+
+**Problem:**
+- Inefficient for location-based queries ("happy hours in SOMA at 3pm")
+- Linear time complexity on large datasets
+- Can't efficiently handle complex polygonal regions (neighborhoods)
+- Distance calculations are slow
+
+**Solution: Migrate to PostGIS**
+- Install PostGIS extension in RDS
+- Add `Geography(POINT)` column with GiST spatial index
+- Define neighborhood boundaries as polygons
+- Use `ST_Contains()` for "within neighborhood" queries
+- Use `ST_DWithin()` for "within X meters" queries
+
+**Benefits:**
+- 100-300x faster location queries with spatial indexes
+- Support for complex neighborhood polygons (not just rectangles)
+- Accurate earth-surface distance calculations
+- Industry-standard geospatial solution
+
+**Implementation Steps:**
+1. Install PostGIS extension: `CREATE EXTENSION postgis;`
+2. Add GeoAlchemy2 to backend dependencies
+3. Add `location` column: `Geography(geometry_type='POINT', srid=4326)`
+4. Create spatial index: `CREATE INDEX USING GIST(location)`
+5. Create neighborhoods table with polygon boundaries
+6. Update API queries to use PostGIS functions
+7. Update API serialization to handle geography objects
+
+**Estimated Effort:** 4-6 hours
+**Resume Value:** High (PostGIS is widely used in production systems)
+**Priority:** Medium (current approach works for MVP scale)
+
+---
+
 ### Phase 2 Features
 
 - User account system with authentication
