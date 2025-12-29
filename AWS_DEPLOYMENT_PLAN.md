@@ -665,15 +665,256 @@ Many engineers learn these skills on the job over 1-2 years. This project compre
 
 ### Step 5: Deploy to AWS
 **Estimated:** 8-12 hours (expect significant debugging)
-**Actual:** TBD
-**Status:** Not started
+**Actual:** ~4 hours
+**Variance:** Beat estimate by 50-66%
+**Status:** ✅ COMPLETE
+**Completed:** December 27-28, 2025
 
-**Planned Tasks:**
-- Run Terraform to create infrastructure (1-2h)
-- SSH to EC2 and install Docker (1h)
-- Deploy containers to EC2 (2-3h)
-- Configure Nginx for SSL (Let's Encrypt) (2-3h)
-- Debug connection/networking issues (2-4h)
+**Completed Tasks:**
+- ✅ Infrastructure already created via Terraform (Step 4)
+- ✅ SSH to EC2 and verify Docker installation
+- ✅ Copy application code to EC2
+- ✅ Configure environment variables for RDS
+- ✅ Build Docker images (backend, frontend)
+- ✅ Create database tables (SQLAlchemy create_all)
+- ✅ Fix frontend build-time environment variables
+- ✅ Deploy containers with docker-compose
+- ✅ Test application end-to-end
+
+**Key Issues Resolved:**
+1. Out of memory during frontend build → Added swap space
+2. Database tables didn't exist → Ran create_all migration
+3. Frontend calling localhost instead of /api → Added ARG/ENV to Dockerfile
+4. Google Maps not loading → Passed API key via build-arg
+
+**Time Breakdown:**
+- Session start: 9:40 PM (Dec 27)
+- Deployment complete: 1:28 AM (Dec 28)
+- Learning/documentation: 1:28 AM - 1:38 AM
+- Total: ~4 hours
+
+**Why Faster Than Estimate:**
+- Docker experience from Steps 1-2
+- Clear error messages
+- Iterative testing approach
+- No SSL configuration needed yet (deferred to Step 7)
+
+---
+
+### Step 5: Post-Deployment - Local Sync Required
+
+**Files to Update Locally:**
+
+**1. `frontend/Dockerfile` - Add ARG/ENV for environment variables**
+
+Copy from EC2 or manually add these lines in stage 2 (after `WORKDIR /app`):
+```dockerfile
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+```
+
+To copy from EC2:
+```bash
+scp -i ~/.ssh/id_ed25519 ec2-user@3.208.71.237:~/frontend/Dockerfile frontend/Dockerfile
+```
+
+**2. `.gitignore` - Ensure sensitive files are ignored**
+
+Add if not already present:
+```
+# Terraform
+terraform/production/.terraform/
+terraform/production/*.tfstate
+terraform/production/*.tfstate.backup
+terraform/production/*.tfvars
+terraform/production/plan.txt
+
+# Environment files
+.env
+.env.production
+.env.local
+```
+
+**3. Create `frontend/.env.production.example` (safe to commit)**
+
+For documentation:
+```
+NEXT_PUBLIC_API_URL=/api
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key_here
+```
+
+**4. DO NOT Copy These (Keep Separate for Local vs AWS):**
+- ❌ Root `.env` - Contains AWS RDS credentials
+- ❌ `docker-compose.yml` - Uses different DATABASE_URL for local vs AWS
+
+**Verification Checklist:**
+- [ ] Updated `frontend/Dockerfile` with ARG/ENV lines
+- [ ] `.gitignore` has all patterns
+- [ ] Created `.env.production.example`
+- [ ] Verified secrets not committed to git
+- [ ] Local dev still works with localhost database
+
+---
+
+### Step 5: Lessons for CI/CD (Step 6)
+
+**Critical Learnings to Apply in GitHub Actions:**
+
+**1. Frontend Build-Time vs Runtime Environment Variables**
+
+**Problem:** Next.js bakes env vars into JavaScript during build, not at runtime.
+
+**Solution for CI/CD:**
+```yaml
+- name: Build frontend
+  run: |
+    docker build \
+      --build-arg NEXT_PUBLIC_API_URL=/api \
+      --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_KEY }} \
+      -t frontend ./frontend
+```
+
+**GitHub Secrets needed:**
+- `GOOGLE_MAPS_KEY`
+- `DB_PASSWORD`
+- `AWS_ACCESS_KEY_ID` (for deployment)
+- `AWS_SECRET_ACCESS_KEY`
+
+---
+
+**2. Database Migrations Strategy**
+
+**Problem:** Tables didn't exist on first deployment.
+
+**Solution for CI/CD:**
+- First deploy: Run `create_all()` or Alembic initial migration
+- Future deploys: Run Alembic migrations automatically
+- Add migration step to deployment workflow:
+
+```yaml
+- name: Run database migrations
+  run: |
+    ssh ec2-user@${{ secrets.EC2_IP }} '
+      cd ~/
+      docker-compose exec -T backend python -c "
+        from app.database import Base, engine
+        import app.models
+        Base.metadata.create_all(engine)
+      "
+    '
+```
+
+**Future improvement:** Use Alembic for proper migration management.
+
+---
+
+**3. Docker Build Process**
+
+**Working build commands to automate:**
+
+```bash
+# Backend (simple - no build args needed)
+docker build -t backend ./backend
+
+# Frontend (requires build args for env vars)
+docker build \
+  --build-arg NEXT_PUBLIC_API_URL=/api \
+  --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_KEY \
+  -t frontend ./frontend
+```
+
+**Deployment order:**
+1. Build images
+2. Copy to EC2 (or push to registry and pull)
+3. Run migrations
+4. Restart containers with `docker-compose up -d`
+
+---
+
+**4. Environment Variable Management**
+
+**Three types of env vars:**
+
+**Type 1: Backend Runtime (in .env, docker-compose reads it)**
+- `DATABASE_URL`
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- Backend reads these when container starts
+
+**Type 2: Frontend Build-Time (passed via --build-arg)**
+- `NEXT_PUBLIC_API_URL`
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+- Baked into JavaScript during build
+
+**Type 3: Infrastructure Secrets (in terraform.tfvars, not committed)**
+- `db_password`
+- `my_ip`
+
+**CI/CD Strategy:**
+- Store all secrets in GitHub Secrets
+- Pass to docker build via --build-arg
+- Create .env on EC2 during deployment
+- Never commit .tfvars or .env files with real values
+
+---
+
+**5. Deployment Validation Checklist**
+
+**Steps to automate in CI/CD:**
+
+```yaml
+# 1. Build backend
+- name: Build backend
+  run: docker build -t backend ./backend
+
+# 2. Build frontend with env vars
+- name: Build frontend
+  run: docker build --build-arg NEXT_PUBLIC_API_URL=/api -t frontend ./frontend
+
+# 3. Copy to EC2 (or use registry)
+- name: Deploy to EC2
+  run: |
+    # Copy images or docker-compose files
+    # SSH and restart containers
+
+# 4. Run migrations
+- name: Migrate database
+  run: # migration command
+
+# 5. Health check
+- name: Verify deployment
+  run: curl http://${{ secrets.EC2_IP }}/api/businesses/
+```
+
+---
+
+**6. Common Pitfalls to Avoid**
+
+**Pitfall 1: Forgetting to rebuild frontend after env var changes**
+- Solution: CI/CD always rebuilds from scratch
+
+**Pitfall 2: Browser cache showing old frontend**
+- Solution: Add cache-busting or versioning
+
+**Pitfall 3: Running out of disk space on EC2**
+- Solution: Add `docker system prune -a` to deployment workflow
+
+**Pitfall 4: Secrets in Dockerfile or committed files**
+- Solution: GitHub Secrets + .gitignore + code review
+
+---
+
+**Interview Talking Points:**
+
+**"How do you handle environment variables in containerized Next.js apps?"**
+- "Next.js requires build-time injection of env vars prefixed with NEXT_PUBLIC_. In Docker, I use ARG/ENV in the Dockerfile and pass values via --build-arg during the build. For CI/CD, these come from GitHub Secrets. Backend env vars are simpler - they're read at runtime from the container environment."
+
+**"What's your database migration strategy?"**
+- "For initial deployment, I used SQLAlchemy's create_all() to set up the schema. Going forward, I'd implement Alembic migrations as part of the CI/CD pipeline, running migrations automatically before deploying new code. This ensures database schema stays in sync with code changes."
+
+**"How do you debug deployment issues?"**
+- "I test each layer independently: database connectivity from container, API response locally, nginx routing, external access, and finally frontend API calls. This isolates whether it's a network, configuration, or code issue."
 
 ---
 
