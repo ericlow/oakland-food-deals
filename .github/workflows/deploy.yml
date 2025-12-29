@@ -45,6 +45,21 @@ jobs:
 
       - name: Deploy on EC2
         run: |
+          # Build .env content locally with secrets substituted
+          cat > env_content << ENVEOF
+POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
+POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.RDS_ENDPOINT }}:5432/${{ secrets.POSTGRES_DB }}
+ENVEOF
+
+          # Copy .env file to EC2
+          scp -o StrictHostKeyChecking=no \
+              -i ~/.ssh/id_ed25519 \
+              env_content \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/.env
+
+          # Deploy on EC2
           ssh -o StrictHostKeyChecking=no \
               -i ~/.ssh/id_ed25519 \
               ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
@@ -52,16 +67,11 @@ jobs:
             docker load < backend.tar
             docker load < frontend.tar
 
-            # Clean up tarballs to save disk space
+            # Clean up tarballs
             rm -f backend.tar frontend.tar
 
-            # Create .env file with secrets
-            cat > .env << ENVEOF
-POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
-POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.RDS_ENDPOINT }}:5432/${{ secrets.POSTGRES_DB }}
-ENVEOF
+            # Move .env to correct location
+            mv ~/.env .env
 
             # Restart containers with new images
             docker-compose down
@@ -70,6 +80,8 @@ ENVEOF
             # Wait for services to start
             sleep 10
           EOF
+
+              
 
       - name: Health check
         run: |
