@@ -1,0 +1,102 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Build backend Docker image
+        run: |
+          docker build -t backend ./backend
+
+      - name: Build frontend Docker image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=/api \
+            --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_KEY }} \
+            -t frontend ./frontend
+
+      - name: Save Docker images as tarballs
+        run: |
+          docker save backend -o backend.tar
+          docker save frontend -o frontend.tar
+
+      - name: Copy images to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no \
+              -i ~/.ssh/id_ed25519 \
+              backend.tar frontend.tar \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/
+
+      - name: Deploy on EC2
+        run: |
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" > env_content
+          echo "POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}" >> env_content
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> env_content
+          echo "DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.RDS_ENDPOINT }}:5432/${{ secrets.POSTGRES_DB }}" >> env_content
+
+          # Copy .env file to EC2
+          scp -o StrictHostKeyChecking=no \
+              -i ~/.ssh/id_ed25519 \
+              env_content \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/.env
+
+          # Deploy on EC2
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/id_ed25519 \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            # Load new Docker images
+            docker load < backend.tar
+            docker load < frontend.tar
+
+            # Clean up tarballs
+            rm -f backend.tar frontend.tar
+
+            # Move .env to correct location
+            mv ~/.env .env
+
+            # Restart containers with new images
+            docker-compose down
+            docker-compose up -d
+
+            # Wait for services to start
+            sleep 10
+          EOF
+
+              
+
+      - name: Health check
+        run: |
+          # Check if API is responding
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}/api/businesses/)
+          if [ $response -eq 200 ]; then
+            echo "✅ API health check passed (HTTP $response)"
+          else
+            echo "❌ API health check failed (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Cleanup old Docker images on EC2
+        if: success()
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/id_ed25519 \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            # Remove dangling images to save disk space
+            docker image prune -f
+          EOF
