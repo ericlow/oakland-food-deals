@@ -51,7 +51,7 @@ jobs:
           echo "RDS_ENDPOINT=${{secrets.RDS_ENDPOINT}}" >> env_content
           echo "GOOGLE_MAPS_API_KEY=${{secrets.GOOGLE_MAPS_KEY}}" >> env_content
 
-          echo "DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.RDS_ENDPOINT }}:5432/${{ secrets.POSTGRES_DB }}" >> env_content
+          echo "DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.RDS_ENDPOINT }}:5432/${{ secrets.POSTGRES_DB }}?sslmode=require" >> env_content
 
           # Copy .env file to EC2
           scp -o StrictHostKeyChecking=no \
