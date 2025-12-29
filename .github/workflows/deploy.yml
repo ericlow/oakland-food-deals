@@ -47,7 +47,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no \
               -i ~/.ssh/id_ed25519 \
-              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             # Load new Docker images
             docker load < backend.tar
             docker load < frontend.tar
@@ -56,7 +56,7 @@ jobs:
             rm -f backend.tar frontend.tar
 
             # Create .env file with secrets
-            cat > .env << 'ENVEOF'
+            cat > .env << ENVEOF
 POSTGRES_USER=${{ secrets.POSTGRES_USER }}
 POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
 POSTGRES_DB=${{ secrets.POSTGRES_DB }}
@@ -87,7 +87,7 @@ ENVEOF
         run: |
           ssh -o StrictHostKeyChecking=no \
               -i ~/.ssh/id_ed25519 \
-              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             # Remove dangling images to save disk space
             docker image prune -f
           EOF
