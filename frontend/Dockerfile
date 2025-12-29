@@ -12,6 +12,11 @@ RUN pnpm install --frozen-lockfile
 # stage 2: build the application
 FROM node:20-alpine AS builder
 WORKDIR /app
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+
 
 #install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate

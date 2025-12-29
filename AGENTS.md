@@ -487,6 +487,184 @@ This document should be reviewed and updated:
 
 ---
 
+## Command Explanation Requirements
+
+### Developer Knowledge Level
+
+**Familiar With:**
+- CI/CD concepts and principles
+- General software development workflows
+- Version control (Git)
+
+**Unfamiliar With:**
+- Docker and containerization
+- Terraform and Infrastructure as Code
+- AWS services and CLI commands
+- AWS-specific CI/CD (CodePipeline, CodeDeploy, etc.)
+
+### Mandatory Command Explanations
+
+When providing Docker, Terraform, or AWS commands, Claude Code MUST:
+
+**1. Explain What We're Doing**
+- State the goal in plain language
+- Explain why this command is necessary
+- Describe what will happen when it runs
+
+**2. Break Down the Command**
+- Explain each flag/parameter
+- Clarify what optional vs required
+- Note any defaults being used
+
+**3. Provide Context**
+- How this fits into the larger workflow
+- What came before and what comes next
+- Common mistakes to avoid
+
+**4. Show Expected Output**
+- What success looks like
+- What errors might occur
+- How to interpret the results
+
+### Docker Command Explanations
+
+**Format for Docker commands:**
+
+```
+Command: docker build -t myapp .
+
+What we're doing: Building a Docker image from the current directory
+
+Breakdown:
+- `docker build` - The build command creates an image from a Dockerfile
+- `-t myapp` - Tags (names) the image "myapp" for easy reference
+- `.` - Uses the current directory as build context (where to find Dockerfile)
+
+Why: We need to package our application and its dependencies into a container image that can run anywhere
+
+Expected output: You'll see each Dockerfile step execute, ending with "Successfully tagged myapp:latest"
+```
+
+### Terraform Command Explanations
+
+**Format for Terraform commands:**
+
+```
+Command: terraform apply
+
+What we're doing: Creating/updating AWS infrastructure based on our .tf files
+
+Breakdown:
+- `terraform apply` - Executes the planned infrastructure changes
+- Will show a plan first and ask for confirmation
+- Modifies real AWS resources (creates EC2, RDS, etc.)
+
+Why: This is how we turn our infrastructure code into actual running resources
+
+Expected output:
+- Shows what will be created/changed/destroyed
+- Prompts: "Do you want to perform these actions?" (type 'yes')
+- Creates resources and shows progress
+- Ends with "Apply complete! Resources: X added, Y changed, Z destroyed"
+
+Warning: This costs money if outside free tier. Review the plan carefully before typing 'yes'.
+```
+
+### AWS CLI Command Explanations
+
+**Format for AWS commands:**
+
+```
+Command: aws ec2 describe-instances
+
+What we're doing: Listing all EC2 instances in your AWS account
+
+Breakdown:
+- `aws` - The AWS Command Line Interface tool
+- `ec2` - The EC2 service
+- `describe-instances` - Gets details about running instances
+
+Why: Verify our EC2 instance was created and see its details (IP address, state, etc.)
+
+Expected output: JSON showing instance details including InstanceId, PublicIpAddress, State, etc.
+```
+
+### AWS CI/CD Explanations
+
+Since the developer is familiar with general CI/CD but not AWS-specific CI/CD:
+
+**When discussing AWS CI/CD, explain:**
+- How it differs from GitHub Actions, Jenkins, etc.
+- What CodePipeline, CodeBuild, CodeDeploy each do
+- Why we might use GitHub Actions instead (for this project)
+- How AWS integrations work (pushing to ECR, deploying to ECS, etc.)
+
+**Format:**
+
+```
+Concept: AWS CodePipeline vs GitHub Actions
+
+What it is: CodePipeline is AWS's native CI/CD orchestration service
+
+How it compares to what you know:
+- GitHub Actions: Workflows in .github/workflows/*.yml, runs on GitHub's servers
+- CodePipeline: Visual pipeline in AWS Console, runs on AWS infrastructure
+
+For this project: We're using GitHub Actions because:
+- You're already using GitHub for code
+- Simpler authentication (GitHub Secrets)
+- Free tier is generous
+- Configuration as code in your repo
+
+CodePipeline would make sense if:
+- Entire team is AWS-centric
+- Need deep AWS service integrations
+- Want everything in AWS Console
+```
+
+### Example: Full Command Explanation
+
+**Developer asks:** "What's this docker-compose command doing?"
+
+**Claude Code responds:**
+
+"Let me break down this docker-compose command:
+
+**Command:** `docker-compose up -d`
+
+**What we're doing:** Starting all containers defined in docker-compose.yml in the background
+
+**Breakdown:**
+- `docker-compose` - Tool for managing multi-container applications
+- `up` - Create and start containers
+- `-d` - Detached mode (runs in background, doesn't block terminal)
+
+**Why:** We need to run both frontend and backend containers simultaneously, and we want them to keep running even after we close the terminal
+
+**What happens:**
+1. Reads docker-compose.yml
+2. Creates a network for containers to communicate
+3. Starts backend container (port 8000)
+4. Starts frontend container (port 3000)
+5. Starts nginx container (port 80)
+6. Returns control to your terminal
+
+**Expected output:**
+```
+Creating network "oakland-food-deals_default" with the default driver
+Creating oakland-food-deals_backend_1  ... done
+Creating oakland-food-deals_frontend_1 ... done
+Creating oakland-food-deals_nginx_1    ... done
+```
+
+**Verification:** Run `docker ps` to see all running containers
+
+**To stop:** Run `docker-compose down` when you want to shut everything down
+
+**Common issue:** Port conflicts - if something is already on port 80/8000/3000, the containers will fail to start. Use `lsof -i :PORT` to check."
+
+---
+
 ## Questions?
 
 If unclear about what Claude Code should or shouldn't do:
@@ -496,6 +674,7 @@ If unclear about what Claude Code should or shouldn't do:
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Created:** December 23, 2024
+**Last Updated:** December 29, 2025
 **Next Review:** After Phase 1 deployment completion
