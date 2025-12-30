@@ -16,6 +16,44 @@
 
 ---
 
+## Session Start Protocol
+
+### Context Gathering Commands
+
+When starting a new session or when asked to "read all the markdown files" or understand project context, use these commands:
+
+**Find project documentation (excluding dependencies):**
+```bash
+find /Users/eric/projects/oakland-food-deals -name "*.md" \
+  -not -path "*/node_modules/*" \
+  -not -path "*/.next/*" \
+  -not -path "*/.git/*" \
+  -not -path "*/venv/*" | head -20
+```
+
+**Key files to read for context:**
+1. `AGENTS.md` - Working mode and guidelines (this file)
+2. `AWS_DEPLOYMENT_PLAN.md` - Infrastructure status and time tracking
+3. `devlog.md` - Development history and session notes
+4. `Oakland_Food_Deals_Project_Overview.md` - Project architecture and technical decisions
+5. `README.md` - Brief project description
+6. `backend/README.md` - API documentation
+
+**When to run context gathering:**
+- At the start of a new session
+- When user says "read all the markdown files"
+- When unclear about project status or architecture
+- Before making recommendations about infrastructure or architecture
+- When time tracking is needed (check AWS_DEPLOYMENT_PLAN.md for current step)
+
+**Purpose:**
+- Avoid recommending work that's already complete
+- Understand current project state and what's in progress
+- Provide accurate guidance based on actual codebase
+- Respect time tracking and estimates already documented
+
+---
+
 ## Agent Responsibilities
 
 ### Developer (Eric) - Primary Implementation
