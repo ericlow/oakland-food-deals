@@ -1,7 +1,7 @@
 # Oakland Food Deals - AWS Deployment Plan
 
-**Last Updated:** December 25, 2025
-**Status:** In Progress (Step 3 of 7 complete - 43%)
+**Last Updated:** December 29, 2025
+**Status:** In Progress (Step 6 of 7 complete - ~86%)
 
 ---
 
@@ -393,10 +393,10 @@ Nginx will route:
 - [x] Create Dockerfile for Next.js frontend (COMPLETED)
 - [x] Create production docker-compose.yml with Nginx (COMPLETED)
 - [x] Set up AWS account and IAM (COMPLETED)
-- [ ] Write Terraform for production infrastructure (IN PROGRESS - Step 4)
-- [ ] Deploy to AWS
-- [ ] Set up GitHub Actions CI/CD
-- [ ] Configure custom domain and SSL
+- [x] Write Terraform for production infrastructure (COMPLETED)
+- [x] Deploy to AWS (COMPLETED)
+- [x] Set up GitHub Actions CI/CD (COMPLETED)
+- [ ] Configure custom domain and SSL (Step 7)
 
 ### Week 3-4: Production Hardening
 - [ ] Set up CloudWatch monitoring
@@ -538,9 +538,9 @@ Many engineers learn these skills on the job over 1-2 years. This project compre
 
 ### Overview
 **Total Estimated:** 32-54 hours of focused work
-**Total Actual So Far:** ~11.5-13 hours (Steps 1-3 complete)
-**Remaining Estimated:** 20.5-41 hours (Steps 4-7)
-**Completion:** 3 of 7 steps complete (~43% done)
+**Total Actual So Far:** ~24-26 hours (Steps 1-6 complete)
+**Remaining Estimated:** 4-8 hours (Step 7 only)
+**Completion:** 6 of 7 steps complete (~86% done)
 
 ### Step 1: Local Containerization ✅ COMPLETE
 **Estimated:** 1.5-3 hours
@@ -918,16 +918,66 @@ docker build \
 
 ---
 
-### Step 6: CI/CD Pipeline
+### Step 6: CI/CD Pipeline ✅ COMPLETE
 **Estimated:** 4-6 hours
-**Actual:** TBD
-**Status:** Not started
+**Actual:** 12 hours 41 minutes
+**Variance:** +6.5-8.5 hours (2-3x over estimate)
+**Status:** ✅ COMPLETE
+**Completed:** December 29, 2025 (9:46 AM - 10:27 PM)
 
-**Planned Tasks:**
-- Learn GitHub Actions basics (1-2h)
-- Write workflow for backend deployment (1-2h)
-- Write workflow for frontend deployment (1-2h)
-- Test and debug pipeline (1-2h)
+**Completed Tasks:**
+- ✅ Set up GitHub Secrets for AWS credentials and environment variables
+- ✅ Created `.github/workflows/deploy.yml` for automated deployment
+- ✅ Configured Docker image build for both frontend and backend
+- ✅ Implemented tarball strategy for image transfer to EC2
+- ✅ Set up SSH key-based authentication for GitHub Actions
+- ✅ Created .env file generation on EC2 from GitHub Secrets
+- ✅ Configured automatic docker-compose restart on deployment
+- ✅ Added health check endpoint validation
+- ✅ Implemented Docker image cleanup to save disk space
+- ✅ Updated EC2 security group to allow SSH from GitHub Actions (0.0.0.0/0)
+- ✅ Simplified environment variable management (single docker-compose.yml, different .env files)
+- ✅ Fixed docker-compose.yml deployment issue
+
+**Key Issues Resolved:**
+1. **YAML Syntax Errors** - Multiple iterations to fix heredoc delimiters and template substitution
+2. **SSH Security Group** - EC2 blocked GitHub Actions IPs → opened SSH to 0.0.0.0/0 with key-based auth
+3. **Database Password Mismatch** - Terraform password differed from GitHub Secret → synchronized credentials
+4. **Malformed DATABASE_URL** - Fixed echo statement bugs (trailing colon, >> vs >, missing :5432 port)
+5. **Old docker-compose.yml on EC2** - Only images were deployed, not config files → added docker-compose.yml and nginx.conf to workflow
+6. **Environment Variable Architecture** - Simplified from 5 variables to 2 (DATABASE_URL, GOOGLE_MAPS_API_KEY)
+
+**GitHub Secrets Configured:**
+- `EC2_SSH_KEY` - Private SSH key for deployment
+- `EC2_HOST` - EC2 public IP address
+- `EC2_USER` - SSH username (ec2-user)
+- `POSTGRES_USER` - Database username
+- `DB_PASSWORD` - Database password (synchronized with Terraform)
+- `POSTGRES_DB` - Database name (oakland_food_deals)
+- `RDS_ENDPOINT` - RDS hostname
+- `GOOGLE_MAPS_KEY` - Google Maps API key
+
+**Architecture Decisions:**
+- GitHub Actions over AWS CodePipeline (simpler, free, config as code)
+- Docker tarball strategy vs registry (no external registry needed)
+- Single docker-compose.yml with environment-specific .env files
+- SSH open to 0.0.0.0/0 with key-based auth (standard CI/CD pattern)
+- Manual database migrations (automated migrations deferred)
+- Environment variables simplified to DATABASE_URL instead of components
+
+**Lessons Learned:**
+- YAML syntax debugging takes significant time (quoted heredocs, template substitution)
+- GitHub Actions IP ranges are massive and change frequently - can't allowlist
+- Environment variable scoping has three separate systems: Local .env, GitHub Secrets, Terraform variables
+- Password synchronization across systems is critical (Terraform → GitHub Secrets)
+- Configuration file deployment as important as code deployment
+- Testing locally first, then promoting is preferred workflow
+
+**Result:**
+- Website live at http://3.208.71.237
+- Automated deployment on every push to main branch
+- Health checks validate API is responding
+- Zero-downtime deployment capability
 
 ---
 

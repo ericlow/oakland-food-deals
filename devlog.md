@@ -1,16 +1,17 @@
 # Development Log - Oakland Food Deals
 
-## Current Status: Backend Complete, Frontend Pending
+## Current Status: Production Deployment Live with Automated CI/CD
 
-**Last Updated:** December 8, 2025
+**Last Updated:** December 29, 2025
 **Repository:** oakland-food-deals
 **Branch:** main
+**Live URL:** http://3.208.71.237
 
 ---
 
 ## Project State Overview
 
-The **backend is now fully functional** with a complete REST API. The frontend has not been started yet.
+The **application is deployed to AWS and running in production** with a fully automated CI/CD pipeline. Both frontend and backend are containerized and deployed on EC2, connected to RDS PostgreSQL.
 
 ### What We Have
 
@@ -145,13 +146,18 @@ The **backend is now fully functional** with a complete REST API. The frontend h
 - [ ] State management
 
 ### Infrastructure
-**Status:** not_started
+**Status:** COMPLETE (Production Deployment)
 
-- [ ] Local development environment setup
-- [ ] Docker configuration (optional)
-- [ ] S3 + CloudFront for frontend (future)
-- [ ] EC2 for backend (future)
-- [ ] RDS PostgreSQL (future)
+- [x] Local development environment setup
+- [x] Docker configuration (docker-compose.yml)
+- [x] Terraform infrastructure as code
+- [x] EC2 t3.micro instance running Docker containers
+- [x] RDS PostgreSQL db.t3.micro (production database)
+- [x] VPC, subnets, security groups, IAM roles
+- [x] GitHub Actions CI/CD pipeline
+- [ ] SSL/TLS certificates (Let's Encrypt) - Step 7
+- [ ] CloudWatch monitoring - Step 7
+- [ ] S3 + CloudFront (Phase 2 ECS deployment - optional)
 
 ---
 
@@ -234,3 +240,57 @@ The **backend is now fully functional** with a complete REST API. The frontend h
 - Committed all backend code to git (commit 8513ba5)
 - Pushed to remote repository on GitHub
 - Backend codebase now version controlled and backed up
+
+### Session: December 23-28, 2025 - AWS Infrastructure & Deployment
+**Completed AWS infrastructure setup and manual deployment:**
+- Step 1: Local containerization (Docker, docker-compose)
+- Step 2: Production Docker setup (Nginx reverse proxy)
+- Step 3: AWS account and IAM configuration
+- Step 4: Terraform infrastructure (VPC, EC2, RDS, Security Groups)
+- Step 5: Manual deployment to AWS EC2
+- Live application running at http://3.208.71.237
+
+### Session: December 29, 2025 - CI/CD Pipeline Implementation
+**Duration:** 12 hours 41 minutes (9:46 AM - 10:27 PM)
+**Goal:** Implement automated deployment pipeline via GitHub Actions (Step 6)
+
+**Completed Implementation:**
+- Set up 8 GitHub Secrets for AWS credentials and environment variables
+- Created `.github/workflows/deploy.yml` with complete deployment workflow
+- Implemented Docker image build and tarball transfer strategy
+- Configured SSH key-based authentication for GitHub Actions
+- Set up automatic .env file generation on EC2 from GitHub Secrets
+- Added health check validation and Docker cleanup steps
+- Updated EC2 security group to allow GitHub Actions SSH access (0.0.0.0/0)
+
+**Major Issues Resolved:**
+1. **YAML Syntax Debugging** - Fixed heredoc delimiters and template substitution errors (multiple iterations)
+2. **SSH Security Group** - Opened SSH to 0.0.0.0/0 with key-based auth (standard CI/CD pattern)
+3. **Database Password Mismatch** - Synchronized Terraform password with GitHub Secrets
+4. **Environment Variable Architecture** - Simplified from 5 variables to 2 (DATABASE_URL, GOOGLE_MAPS_API_KEY)
+5. **Malformed DATABASE_URL** - Fixed echo statement bugs (trailing colon, >> vs >, missing port)
+6. **Configuration Deployment** - Added docker-compose.yml and nginx.conf to workflow
+
+**Architecture Decisions:**
+- GitHub Actions over AWS CodePipeline (simpler, free, config as code)
+- Docker tarball strategy instead of registry (no external dependencies)
+- Single docker-compose.yml with environment-specific .env files (local vs production)
+- Manual database migrations (automated migrations deferred to future work)
+
+**Key Learnings:**
+- YAML syntax debugging requires careful attention to quotes and template substitution
+- GitHub Actions IP ranges are massive and unpredictable - can't allowlist specific IPs
+- Environment variable management spans three systems: Local .env, GitHub Secrets, Terraform
+- Password synchronization critical across all systems (Terraform → GitHub Secrets)
+- Configuration file deployment as important as code deployment
+
+**Result:**
+- ✅ Automated CI/CD pipeline operational
+- ✅ Deploys on every push to main branch
+- ✅ Health checks validate successful deployment
+- ✅ Zero-downtime deployment capability
+- ✅ Website live and accessible at http://3.208.71.237
+
+**Time Variance:** 2-3x over original 4-6 hour estimate due to debugging and architectural simplification
+
+**Status:** Step 6 complete. Ready for Step 7 (Production Hardening: SSL/TLS, CloudWatch monitoring)
