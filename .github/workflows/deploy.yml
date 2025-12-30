@@ -45,12 +45,7 @@ jobs:
 
       - name: Deploy on EC2
         run: |
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" > env_content
-          echo "POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}" >> env_content
-          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> env_content
-          echo "RDS_ENDPOINT=${{secrets.RDS_ENDPOINT}}" >> env_content
-          echo "GOOGLE_MAPS_API_KEY=${{secrets.GOOGLE_MAPS_KEY}}" >> env_content
-
+          echo "GOOGLE_MAPS_API_KEY=${{secrets.GOOGLE_MAPS_KEY}}" >> env_content:
           echo "DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.RDS_ENDPOINT }}:5432/${{ secrets.POSTGRES_DB }}?sslmode=require" >> env_content
 
           # Copy .env file to EC2

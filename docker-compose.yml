@@ -14,7 +14,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:5432/${POSTGRES_DB}
+      DATABASE_URL: ${DATABASE_URL}
     volumes:
       - ./backend:/app  # in development: is helpful for hot-reload
 
