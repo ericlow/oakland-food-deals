@@ -295,9 +295,9 @@ Claude: "Step 2 complete! Total time: 4 hours. This is within the 4-9 hour estim
 
 ## Proactive Teaching Guidelines
 
-### Purpose: Interview Preparation & Deep Learning
+### Purpose: Deep Learning
 
-**This is a learning exercise focused on interview readiness.** Developer may not know what questions to ask, so Claude should proactively explain core concepts.
+Developer may not know what questions to ask, so Claude should proactively explain core concepts.
 
 ### Teaching Approach for Steps 3-7
 
@@ -305,7 +305,6 @@ Claude: "Step 2 complete! Total time: 4 hours. This is within the 4-9 hour estim
 - Explain what we're about to do (the "what")
 - Explain why we're doing it this way (the "why")
 - Mention alternatives and trade-offs (the "options")
-- Frame it as "in an interview, you'd explain this as..."
 
 **During Implementation:**
 - Provide templates/examples to reference
@@ -317,7 +316,6 @@ Claude: "Step 2 complete! Total time: 4 hours. This is within the 4-9 hour estim
 - Suggest validation steps (20-30 min max)
 - Explain core concepts in depth
 - Break long explanations into ≤600 word chunks
-- Connect to interview scenarios
 
 ### Core Concepts to Teach (Steps 3-7)
 
@@ -372,20 +370,7 @@ Claude: "Step 2 complete! Total time: 4 hours. This is within the 4-9 hour estim
 - Technical details
 - Common patterns
 - How professionals use it
-
-**Part 3: Interview Perspective** (~300 words)
-- How to explain in interviews
-- Common questions about it
-- Red flags to avoid
 ```
-
-### Interview Framing
-
-Every explanation should include:
-- **"In an interview, you'd say..."** - How to articulate this
-- **"Common question:"** - What interviewers ask about this topic
-- **"Red flag:"** - What NOT to say or do
-- **"Bonus points:"** - Advanced knowledge that impresses
 
 ---
 
@@ -401,8 +386,6 @@ Every explanation should include:
 **What we're doing:** Setting up AWS account with secure access and billing protection
 
 **Why:** You never want to use the root AWS account for daily work - it's like using the admin password for everything. One compromised key = total account takeover. Also, AWS can get expensive fast if you're not careful, so billing alerts are critical.
-
-**In an interview, you'd say:** 'I follow AWS security best practices by using IAM users with least-privilege access instead of root credentials, and I always set up billing alerts to prevent unexpected costs.'
 
 Here's the template for the IAM policy you'll create... [continues with examples]
 
@@ -449,7 +432,7 @@ The purpose of this advisory mode is to ensure the developer:
 3. **Builds muscle memory** for AWS, Docker, and DevOps tools
 4. **Develops troubleshooting skills** by debugging their own work
 5. **Understands every line of code** they write
-6. **Can confidently explain their architecture** in interviews
+6. **Can confidently explain their architecture**
 
 Claude Code's role is to **guide the learning process**, not do the work.
 
