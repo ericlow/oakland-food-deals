@@ -19,3 +19,7 @@
     value       = aws_db_instance.main.db_name
   }
 
+  output "elastic_ip" {
+    description = "Elastic IP address of the EC2 instance"
+    value       = aws_eip.web.public_ip
+  }
