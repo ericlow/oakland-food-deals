@@ -31,9 +31,12 @@
     subnet_id              = aws_subnet.public.id
     vpc_security_group_ids = [aws_security_group.ec2.id]
     key_name               = aws_key_pair.main.key_name
+    user_data_replace_on_change = true	
 
     user_data = <<-EOF
                 #!/bin/bash
+
+		echo "User data script start at $(date)" >> /var/log/user-data.log
                 # Update system
                 yum update -y
 
@@ -51,8 +54,11 @@
                 curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                 chmod +x /usr/local/bin/docker-compose
 
-		# Install Certbot for SSL certificates
-		yum install -y certbot python3-certbox-nginx
+                # Enable EPEL repository for Certbot
+                amazon-linux-extras install epel -y
+
+                # Install Certbot from EPEL
+                yum install -y certbot python-certbot-nginx
 
 		# Log completion
 		echo "User data script completed at $(date)" >> /var/log/user-data.log
