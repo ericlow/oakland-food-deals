@@ -1,6 +1,6 @@
 services:
   frontend:
-    build: ./frontend
+    image: frontend:latest
     ports:
       - "3000:3000"
     environment:
@@ -10,13 +10,11 @@ services:
       - backend
 
   backend:
-    build: ./backend
+    image: backend:latest
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: ${DATABASE_URL}
-    volumes:
-      - ./backend:/app  # in development: is helpful for hot-reload
 
   nginx:
     image: nginx:alpine
