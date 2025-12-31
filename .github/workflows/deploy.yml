@@ -43,19 +43,27 @@ jobs:
               backend.tar frontend.tar \
               ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/
 
-      - name: Copy docker-compose.yml to EC2
+      - name: Copy configuration files to EC2
+        env:
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
         run: |
+          # Create nginx.conf with actual domain name substituted
+          sed "s/DOMAIN_NAME_PLACEHOLDER/${DOMAIN_NAME}/g" nginx.conf > nginx.conf.tmp
+
+          # Copy files to EC2
           scp -o StrictHostKeyChecking=no \
             -i ~/.ssh/id_ed25519 \
-            docker-compose.yml \
+            docker-compose.yml nginx.conf.tmp \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/
 
-      - name: Copy configuration files to EC2
-        run: |
-          scp -o StrictHostKeyChecking=no \
+          # Rename nginx.conf.tmp to nginx.conf on EC2
+          ssh -o StrictHostKeyChecking=no \
             -i ~/.ssh/id_ed25519 \
-            docker-compose.yml nginx.conf \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "mv ~/nginx.conf.tmp ~/nginx.conf"
+
+          # Clean up local temp file
+          rm nginx.conf.tmp
 
 
       - name: Deploy on EC2
