@@ -93,15 +93,51 @@ jobs:
 
               
 
+      - name: Configure SSL with Let's Encrypt
+        env:
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+          LETSENCRYPT_EMAIL: ${{ secrets.LETSENCRYPT_EMAIL }}
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/id_ed25519 \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            # Check if SSL certificate already exists
+            if [ ! -d "/etc/letsencrypt/live/${DOMAIN_NAME}" ]; then
+              echo "Getting SSL certificate for the first time..."
+              sudo certbot --nginx -d ${DOMAIN_NAME} \
+                --non-interactive \
+                --agree-tos \
+                --email ${LETSENCRYPT_EMAIL} \
+                --redirect
+            else
+              echo "SSL certificate exists. Renewing if needed..."
+              sudo certbot renew --non-interactive
+            fi
+
+            # Restart nginx to apply any SSL changes
+            cd ~
+            docker-compose restart nginx
+          EOF
+
       - name: Health check
         run: |
-          # Check if API is responding
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}/api/businesses/)
+          # Wait a moment for nginx to restart after SSL configuration
+          sleep 5
+
+          # Try HTTPS first
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.DOMAIN_NAME }}/api/businesses/ || echo "000")
+
           if [ $response -eq 200 ]; then
-            echo "✅ API health check passed (HTTP $response)"
+            echo "✅ HTTPS health check passed (HTTP $response)"
           else
-            echo "❌ API health check failed (HTTP $response)"
-            exit 1
+            echo "⚠️ HTTPS returned $response, checking HTTP fallback..."
+            response_http=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.DOMAIN_NAME }}/api/businesses/)
+            if [ $response_http -eq 200 ]; then
+              echo "✅ HTTP health check passed (HTTP $response_http) - SSL may be configuring"
+            else
+              echo "❌ Health check failed (HTTPS: $response, HTTP: $response_http)"
+              exit 1
+            fi
           fi
 
       - name: Cleanup old Docker images on EC2
@@ -113,3 +149,11 @@ jobs:
             # Remove dangling images to save disk space
             docker image prune -f
           EOF
+
+
+
+
+
+
+
+
