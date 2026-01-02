@@ -1,7 +1,7 @@
 # Oakland Food Deals - AWS Deployment Plan
 
-**Last Updated:** December 29, 2025
-**Status:** In Progress (Step 6 of 7 complete - ~86%)
+**Last Updated:** January 1, 2026
+**Status:** Complete (All 7 steps complete - 100%)
 
 ---
 
@@ -981,17 +981,30 @@ docker build \
 
 ---
 
-### Step 7: Production Hardening
+### Step 7: Production Hardening ✅ COMPLETE
 **Estimated:** 4-8 hours
-**Actual:** TBD
-**Status:** Not started
+**Actual:** ~3 hours
+**Variance:** Beat estimate by 25-62%
+**Status:** ✅ COMPLETE
+**Completed:** January 1, 2026
 
-**Planned Tasks:**
-- Set up CloudWatch monitoring (1-2h)
-- Configure RDS automated backups (1h)
-- Add health checks (1-2h)
-- Performance testing (1-2h)
-- Security review (1-2h)
+**Completed Tasks:**
+- ✅ Created monitoring.tf with CloudWatch log groups (7-day retention)
+- ✅ Enabled RDS PostgreSQL log export to CloudWatch
+- ✅ Added 6 CloudWatch alarms (4 RDS + 2 EC2) with SNS email alerts
+- ✅ Configured SSL/TLS with Let's Encrypt (cheersly.duckdns.org)
+- ✅ Verified RDS logs flowing to CloudWatch
+- ✅ All changes within AWS free tier limits
+
+**CloudWatch Alarms Created:**
+- RDS: CPU utilization (>80%), Memory (<256MB), Storage (<2GB), Connections (>40)
+- EC2: CPU utilization (>80%), Status check failures
+
+**Key Decisions:**
+- Reused existing billing-alerts SNS topic (simpler management)
+- 7-day log retention (prevents exceeding 5GB free tier quota)
+- Imported existing log group into Terraform state
+- SSL configured with DuckDNS free domain service
 
 ---
 
@@ -1008,11 +1021,15 @@ docker build \
 - ✅ Small investment ($2) for Phase 2 ECS learning
 - ✅ Use existing PostgreSQL in Docker (not separate db service)
 
+### Decisions Made (Step 7)
+- ✅ Custom domain: DuckDNS (cheersly.duckdns.org) - free tier
+- ✅ Monitoring: CloudWatch only - sufficient for MVP
+- ✅ Secrets: GitHub Secrets + Terraform variables - simple and free
+- ✅ SSL/TLS: Let's Encrypt with auto-renewal
+
 ### Open Questions
-- [ ] Custom domain name strategy (Route53 or external registrar?)
-- [ ] Monitoring strategy (CloudWatch only or add external tools?)
-- [ ] Secrets management (AWS Secrets Manager or environment variables?)
-- [ ] Database migration strategy for production
+- [ ] Database migration strategy for production (manual vs automated)
+- [ ] Phase 2 ECS learning deployment timing
 
 ---
 

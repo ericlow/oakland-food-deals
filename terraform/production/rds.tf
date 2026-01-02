@@ -21,6 +21,9 @@
     storage_type         = "gp3"
     storage_encrypted    = true
 
+    # CloudWatch Logs
+    enabled_cloudwatch_logs_exports = ["postgresql"]
+
     # Database credentials
     db_name  = "oakland_food_deals"
     username = var.db_username

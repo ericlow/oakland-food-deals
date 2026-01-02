@@ -1,11 +1,11 @@
 # Development Log - Oakland Food Deals
 
-## Current Status: Production Deployment Live with Automated CI/CD
+## Current Status: Production Deployment Complete with Monitoring & SSL
 
-**Last Updated:** December 29, 2025
+**Last Updated:** January 1, 2026
 **Repository:** oakland-food-deals
 **Branch:** main
-**Live URL:** http://3.208.71.237
+**Live URL:** https://cheersly.duckdns.org
 
 ---
 
@@ -294,3 +294,55 @@ The **application is deployed to AWS and running in production** with a fully au
 **Time Variance:** 2-3x over original 4-6 hour estimate due to debugging and architectural simplification
 
 **Status:** Step 6 complete. Ready for Step 7 (Production Hardening: SSL/TLS, CloudWatch monitoring)
+
+---
+
+### Session: January 1, 2026 - Step 7: Production Hardening & Monitoring
+**Duration:** ~3 hours
+**Goal:** Complete Step 7 - CloudWatch monitoring, alarms, and SSL/TLS configuration
+
+**Completed Implementation:**
+- Created `monitoring.tf` with CloudWatch log groups (7-day retention)
+- Enabled RDS PostgreSQL log export to CloudWatch in `rds.tf`
+- Added 6 CloudWatch alarms (4 RDS + 2 EC2) with SNS email notifications
+- Imported existing CloudWatch log group into Terraform state
+- Verified RDS logs flowing to CloudWatch (checkpoint logs visible)
+- Configured SSL/TLS with Let's Encrypt for cheersly.duckdns.org
+- Updated nginx.conf for HTTPS with automatic HTTP→HTTPS redirect
+
+**CloudWatch Alarms Created:**
+1. RDS CPU utilization (threshold: >80% for 10 min)
+2. RDS freeable memory (threshold: <256 MB for 10 min)
+3. RDS free storage space (threshold: <2 GB)
+4. RDS database connections (threshold: >40 for 10 min)
+5. EC2 CPU utilization (threshold: >80% for 10 min)
+6. EC2 status check failures
+
+**Key Learnings:**
+- CloudWatch log groups = AWS version of /var/log (centralized logging like ELK)
+- SNS topics = notification distribution service (pub/sub pattern)
+- Free tier: 10 alarms free, 5 GB logs/month free, 1,000 SNS emails/month free
+- PostgreSQL default logging is minimal (log_statement = "none") to save storage
+- RDS logs take 1-5 minutes to propagate to CloudWatch
+- 7-day log retention prevents exceeding 5 GB free tier quota
+- Terraform import required for pre-existing CloudWatch resources
+
+**Architecture Decisions:**
+- Reused existing `billing-alerts` SNS topic (simpler than creating separate topic)
+- 7-day log retention balances debugging capability with free tier limits
+- SSL via Let's Encrypt + DuckDNS (both free, no Route53 cost)
+- CloudWatch-only monitoring (sufficient for MVP, no external tools needed)
+
+**Challenges Resolved:**
+- Log group already existed → used `terraform import` to add to state
+- PostgreSQL not logging queries by default → confirmed this is intentional (engine-default)
+- Verified logs flowing by checking checkpoint operations
+
+**Result:**
+- ✅ Production monitoring complete with 6 alarms + email alerts
+- ✅ SSL/TLS configured (https://cheersly.duckdns.org)
+- ✅ RDS logs exporting to CloudWatch
+- ✅ All within AWS free tier limits
+- ✅ Total alarms: 7/10 used (3 free slots remaining)
+
+**Status:** Step 7 complete. Phase 1 AWS deployment fully complete (all 7 steps done)
