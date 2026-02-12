@@ -828,7 +828,7 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
                 </div>
 
                 <div className="text-white space-y-3 md:space-y-4">
-                  <p className="text-sm md:text-base leading-relaxed drop-shadow">{deal.deal_description}</p>
+                  <p className="text-sm md:text-base leading-relaxed drop-shadow whitespace-pre-line">{deal.deal_description}</p>
                   <div className="flex flex-wrap items-center gap-3">
                     <Button
                       variant="outline"

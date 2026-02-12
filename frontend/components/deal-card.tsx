@@ -79,7 +79,7 @@ export function DealCard({ deal }: DealCardProps) {
         </CardHeader>
 
         <CardContent className="relative z-10 flex-1 pb-2 md:pb-3">
-          <p className="text-xs md:text-sm text-white leading-relaxed line-clamp-3">{deal.deal_description}</p>
+          <p className="text-xs md:text-sm text-white leading-relaxed line-clamp-3 whitespace-pre-line">{deal.deal_description}</p>
         </CardContent>
 
         <CardFooter className="relative z-10 flex items-center justify-between border-t border-white/20 pt-2 md:pt-3">
