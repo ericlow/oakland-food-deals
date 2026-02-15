@@ -160,17 +160,42 @@ The **application is fully deployed and running in production** on AWS Free Tier
 
 ## Next Steps
 
-### Phase 2 Features
-- PostGIS extension for geographic queries (future enhancement)
-- Duplicate business detection logic (future enhancement)
+### High Priority - Near Term
+
+**Local Kubernetes Learning** ($0 cost - runs locally)
+- Deploy Oakland Food Deals to local K8s cluster (minikube/kind/k3d)
+- Learn pods, deployments, services, ingress controllers
+- Practice kubectl commands and Helm charts
+- Create Kubernetes manifests for frontend, backend, database
+- Document architecture and learnings for resume/portfolio
+- **Value:** Industry-standard container orchestration experience
+
+**Performance Testing**
+- Load testing with Apache Bench, Locust, or k6
+- Database query optimization and indexing analysis
+- Frontend performance metrics (Lighthouse, Core Web Vitals)
+- API response time profiling
+- Identify bottlenecks before scaling
+
+**PostGIS Integration** (High Value)
+- Install PostGIS extension in RDS
+- Add Geography(POINT) column with GiST spatial index
+- Define Oakland neighborhood boundaries as polygons
+- Migrate location queries to use ST_Contains() and ST_DWithin()
+- 100-300x faster geospatial queries
+- **Estimated effort:** 4-6 hours
+
+### Phase 2 Features - Future Enhancements
+
+- Duplicate business detection logic
 - Edit permissions system (requires authentication first)
 - User authentication system
 - Reputation and badges
 - Moderator roles
-- Instagram integration
-- Google Places API integration
-- Mobile app
-- S3 + CloudFront (Phase 2 ECS deployment - optional)
+- Instagram integration for deal aggregation
+- Google Places API integration for real-time busyness
+- Mobile app using existing FastAPI backend
+- S3 + CloudFront migration (Phase 2 ECS deployment - optional)
 
 ---
 

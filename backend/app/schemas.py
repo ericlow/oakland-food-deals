@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime, time
 from typing import Optional
 
@@ -43,7 +43,7 @@ class DealBase(BaseModel):
     days_active: Optional[list[str]] = None
     time_start: Optional[time] = None
     time_end: Optional[time] = None
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=750)
     food_items: Optional[str] = None
     drink_items: Optional[str] = None
     pricing: Optional[str] = None
@@ -61,7 +61,7 @@ class DealUpdate(BaseModel):
     days_active: Optional[list[str]] = None
     time_start: Optional[time] = None
     time_end: Optional[time] = None
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=750)
     food_items: Optional[str] = None
     drink_items: Optional[str] = None
     pricing: Optional[str] = None

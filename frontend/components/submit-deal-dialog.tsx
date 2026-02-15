@@ -217,11 +217,22 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
             <Textarea
               id="deal_description"
               value={formData.deal_description}
-              onChange={(e) => setFormData({ ...formData, deal_description: e.target.value })}
+              onChange={(e) => {
+                const lines = e.target.value.split("\n")
+                if (lines.length <= 5) {
+                  setFormData({ ...formData, deal_description: e.target.value })
+                }
+              }}
               required
+              maxLength={750}
               placeholder="e.g., $2 off all beers, half-price appetizers"
               className="min-h-[80px]"
             />
+            {formData.deal_description.split("\n").length > 3 && (
+              <p className={`text-xs text-right ${formData.deal_description.split("\n").length >= 5 ? "text-destructive" : "text-muted-foreground"}`}>
+                {formData.deal_description.split("\n").length}/5 lines
+              </p>
+            )}
           </div>
 
           {/* Background Image */}

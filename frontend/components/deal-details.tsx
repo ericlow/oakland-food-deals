@@ -793,10 +793,21 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
                           <Textarea
                             id="description"
                             value={editForm.deal_description}
-                            onChange={(e) => setEditForm({ ...editForm, deal_description: e.target.value })}
+                            onChange={(e) => {
+                              const lines = e.target.value.split("\n")
+                              if (lines.length <= 5) {
+                                setEditForm({ ...editForm, deal_description: e.target.value })
+                              }
+                            }}
                             className="min-h-[120px]"
+                            maxLength={750}
                             required
                           />
+                          {editForm.deal_description.split("\n").length > 3 && (
+                            <p className={`text-xs text-right ${editForm.deal_description.split("\n").length >= 5 ? "text-destructive" : "text-muted-foreground"}`}>
+                              {editForm.deal_description.split("\n").length}/5 lines
+                            </p>
+                          )}
                         </div>
                         <div>
                           <Label htmlFor="image_url">Background Image</Label>
