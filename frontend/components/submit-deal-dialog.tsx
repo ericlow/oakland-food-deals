@@ -59,6 +59,16 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (formData.start_time && formData.end_time && formData.end_time <= formData.start_time) {
+      toast({
+        title: "Invalid times",
+        description: "End time must be after start time.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setSubmitting(true)
 
     try {
@@ -142,7 +152,15 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] max-w-[500px]">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto w-[95vw] max-w-[500px]"
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement
+          if (target.closest(".pac-container")) {
+            e.preventDefault()
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Submit a New Deal</DialogTitle>
         </DialogHeader>
@@ -280,25 +298,55 @@ export function SubmitDealDialog({ open, onOpenChange }: SubmitDealDialogProps) 
               <Label htmlFor="start_time">
                 Start Time <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="start_time"
-                type="time"
+              <Select
                 value={formData.start_time}
-                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                required
-              />
+                onValueChange={(value) => setFormData({ ...formData, start_time: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 48 }, (_, i) => {
+                    const hour = Math.floor(i / 2).toString().padStart(2, "0")
+                    const minute = i % 2 === 0 ? "00" : "30"
+                    const value = `${hour}:${minute}`
+                    const displayHour = Math.floor(i / 2) % 12 || 12
+                    const ampm = Math.floor(i / 2) < 12 ? "AM" : "PM"
+                    return (
+                      <SelectItem key={value} value={value}>
+                        {displayHour}:{minute} {ampm}
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="end_time">
                 End Time <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="end_time"
-                type="time"
+              <Select
                 value={formData.end_time}
-                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                required
-              />
+                onValueChange={(value) => setFormData({ ...formData, end_time: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 48 }, (_, i) => {
+                    const hour = Math.floor(i / 2).toString().padStart(2, "0")
+                    const minute = i % 2 === 0 ? "00" : "30"
+                    const value = `${hour}:${minute}`
+                    const displayHour = Math.floor(i / 2) % 12 || 12
+                    const ampm = Math.floor(i / 2) < 12 ? "AM" : "PM"
+                    return (
+                      <SelectItem key={value} value={value}>
+                        {displayHour}:{minute} {ampm}
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

@@ -72,5 +72,28 @@ export function GooglePlacesAutocomplete({ onPlaceSelect }: GooglePlacesAutocomp
     }
   }, [isLoaded, onPlaceSelect])
 
+  // DEBUG: Log all pointer/mouse events to understand what's happening
+  useEffect(() => {
+    const events = ["pointerdown", "pointerup", "mousedown", "mouseup", "click", "focusin", "focusout"] as const
+    const handlers = events.map((eventName) => {
+      const handler = (e: Event) => {
+        const target = e.target as HTMLElement
+        const isPac = !!target.closest(".pac-container")
+        const isOverlay = !!target.closest("[data-slot='dialog-overlay']")
+        const isContent = !!target.closest("[data-slot='dialog-content']")
+        if (isPac || isOverlay) {
+          console.log(`[DEBUG] ${eventName} | target: ${target.tagName}.${target.className.slice(0, 50)} | pac: ${isPac} | overlay: ${isOverlay} | content: ${isContent} | phase: ${e.eventPhase === 1 ? "capture" : e.eventPhase === 2 ? "target" : "bubble"}`)
+        }
+      }
+      document.addEventListener(eventName, handler, true)
+      return { eventName, handler }
+    })
+    return () => {
+      handlers.forEach(({ eventName, handler }) => {
+        document.removeEventListener(eventName, handler, true)
+      })
+    }
+  }, [])
+
   return <Input ref={inputRef} type="text" placeholder="Search for a restaurant..." disabled={!isLoaded} />
 }

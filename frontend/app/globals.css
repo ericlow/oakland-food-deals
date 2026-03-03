@@ -125,3 +125,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Google Places autocomplete dropdown must appear above Radix Dialog overlay */
+.pac-container {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+
+/* Prevent dialog overlay from blocking clicks on the .pac-container */
+[data-slot="dialog-overlay"] {
+  pointer-events: none !important;
+}
+
+/* Re-enable pointer events on the dialog content itself */
+[data-slot="dialog-content"] {
+  pointer-events: auto !important;
+}

@@ -522,6 +522,15 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
     e.preventDefault()
     if (!deal) return
 
+    if (editForm.start_time && editForm.end_time && editForm.end_time <= editForm.start_time) {
+      toast({
+        title: "Invalid times",
+        description: "End time must be after start time.",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       // Update business info (name, address, phone)
       const businessResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${deal.business_id}`, {
@@ -769,23 +778,53 @@ const DealDetails: React.FC<{ dealId: number }> = ({ dealId }) => {
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <Label htmlFor="start">Start Time</Label>
-                            <Input
-                              id="start"
-                              type="time"
+                            <Select
                               value={editForm.start_time}
-                              onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
-                              required
-                            />
+                              onValueChange={(value) => setEditForm({ ...editForm, start_time: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select time" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 48 }, (_, i) => {
+                                  const hour = Math.floor(i / 2).toString().padStart(2, "0")
+                                  const minute = i % 2 === 0 ? "00" : "30"
+                                  const value = `${hour}:${minute}`
+                                  const displayHour = Math.floor(i / 2) % 12 || 12
+                                  const ampm = Math.floor(i / 2) < 12 ? "AM" : "PM"
+                                  return (
+                                    <SelectItem key={value} value={value}>
+                                      {displayHour}:{minute} {ampm}
+                                    </SelectItem>
+                                  )
+                                })}
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div>
                             <Label htmlFor="end">End Time</Label>
-                            <Input
-                              id="end"
-                              type="time"
+                            <Select
                               value={editForm.end_time}
-                              onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
-                              required
-                            />
+                              onValueChange={(value) => setEditForm({ ...editForm, end_time: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select time" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 48 }, (_, i) => {
+                                  const hour = Math.floor(i / 2).toString().padStart(2, "0")
+                                  const minute = i % 2 === 0 ? "00" : "30"
+                                  const value = `${hour}:${minute}`
+                                  const displayHour = Math.floor(i / 2) % 12 || 12
+                                  const ampm = Math.floor(i / 2) < 12 ? "AM" : "PM"
+                                  return (
+                                    <SelectItem key={value} value={value}>
+                                      {displayHour}:{minute} {ampm}
+                                    </SelectItem>
+                                  )
+                                })}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                         <div>
